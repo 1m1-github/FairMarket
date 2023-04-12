@@ -25,9 +25,9 @@
 # reputation list of bidders [boxes]
 
 # api
-# receive bid [bidder]
-# receive cancel bid [bidder]
-# trade [seller]
+# create bid [bidder]
+# cancel bid [bidder]
+# trade [seller] = create bid [bidder]
 # add reputation [bidder]
 # withdraw [seller]
 

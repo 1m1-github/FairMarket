@@ -30,8 +30,6 @@
 # trade [seller]
 # add reputation [bidder]
 # withdraw [seller]
-# send bid [bidder] ????
-# send cancel bid [bidder] ????
 
 # create bid
 # if 0<min, do not allow 0 lurker

@@ -89,7 +89,14 @@ end
 
 block main:
 
-    exit(1)
+    assert(Txn.RekeyTo == Global.ZeroAddress)
+
+    switch Txn.ApplicationArgs[0]:
+        "create_bid": create_bid
+        "cancel_bid": cancel_bid
+        "add_reputation": add_reputation
+        "withdraw": withdraw
+    end
 
     # block add:
     #     # Add 2 integers
@@ -154,6 +161,23 @@ block main:
     #     abi_return(abi_encode_uint64(result))
     #     exit(1)
     # end
+end
+
+block create_bid:
+    
+    # check
+    const int FX_APP = 178969021
+    assert(Gtxn[0].Type == Axfer)
+    assert(Gtxn[0].AssetReceiver == Global.CurrentApplicationAddress)
+    assert(Gtxn[1].Type == Appl)
+    assert(Gtxn[1].Sender == Gtxn[0].Sender)
+    assert(Gtxn[1].Receiver == FX_APP)
+    assert(Gtxn[0].XferAsset == Gtxna[1].Assets[0])
+    assert(Global.GroupID == 2)
+    assert(Txn.Sender == Gtxn[0].Sender)
+
+
+
 end
 
 # func abi_return_int(result):

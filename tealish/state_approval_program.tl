@@ -1,10 +1,11 @@
 #pragma version 8
 
 # global params
-# chrony/highroller/subjective importance [3xint] [seller can change]
-# min [int] [seller can change]
-# min precision [2xint] [seller can change]
-# description [bytes] [seller can change]
+# owner [bytes]
+# chrony/highroller/subjective importance [3xint] [owner can change]
+# min [int] [owner can change]
+# min precision [2xint] [owner can change]
+# description [bytes] [owner can change]
 # encryption public key [256 bytes = 3 vars]
 # version [int]
 # reputation +/- [2xint]
@@ -12,28 +13,33 @@
 # box is a bid: (each box element is prefixed with its length)
 # txid [bytes] [key]
 # parent bid [bytes]
-# bidder [bytes]
+# bidder address [bytes]
+# fairmarket address [bytes]
 # currency (id, quantity)
 # fx (bytes xor 2 ints)
 # type (chrony/highroller/subjective/lurker)
 # data (bytes)
 
-# bid list [box]
+# bid list = list of txids [boxes]
 
-# reputation list of bidders [box]
+# reputation list of bidders [boxes]
 
 # api
-# create bid [bidder]
-# cancel bid [bidder]
+# receive bid [bidder]
+# receive cancel bid [bidder]
 # trade [seller]
 # add reputation [bidder]
 # withdraw [seller]
+# send bid [bidder] ????
+# send cancel bid [bidder] ????
 
 # create bid
 # if 0<min, do not allow 0 lurker
+# add box
 
 # cancel bid
 # input txid, bidder == txn.Sender
+# remove box
 
 # trade
 # not with lurker

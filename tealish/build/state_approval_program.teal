@@ -1,0 +1,585 @@
+#pragma version 8
+
+// global params
+// owner [bytes]
+// chrony/highroller/subjective importance [3xint] [owner can change]
+// min [int] [owner can change]
+// min precision [2xint] [owner can change]
+// description [bytes] [owner can change]
+// encryption public key [256 bytes = 3 vars]
+// version [int]
+// reputation +/- [2xint]
+
+// box is a bid: (each box element is prefixed with its length)
+// txid [bytes] [key]
+// parent bid [bytes]
+// bidder address [bytes]
+// fairmarket address [bytes]
+// currency (id, quantity)
+// fx (bytes xor 2 ints)
+// type (chrony/highroller/subjective/lurker)
+// data (bytes)
+
+// bid list = list of txids [boxes]
+
+// reputation list of bidders [boxes]
+
+// api
+// create bid [bidder]
+// cancel bid [bidder]
+// trade [seller] = create bid [bidder]
+// add reputation [bidder]
+// withdraw [seller]
+
+// create bid
+// if 0<min, do not allow 0 lurker
+// add box
+
+// cancel bid
+// input txid, bidder == txn.Sender
+// remove box
+
+// trade
+// not with lurker
+// add bidder to reputation list
+// remove bid
+// send fee to treasury in exchange for project coins for bidder and seller
+
+// withdraw
+// if amount < locked via bids
+
+// if Txn.ApplicationID == 0:
+  txn ApplicationID
+  pushint 0
+  ==
+  bz l0_end
+  // then:
+    // Handle Create App
+    // exit(1)
+    pushint 1
+    return
+  l0_end: // end
+
+// switch Txn.OnCompletion:
+txn OnCompletion
+pushint 0 // NoOp
+==
+bnz main
+txn OnCompletion
+pushint 1 // OptIn
+==
+bnz opt_in
+txn OnCompletion
+pushint 2 // CloseOut
+==
+bnz close_out
+txn OnCompletion
+pushint 4 // UpdateApplication
+==
+bnz update_app
+txn OnCompletion
+pushint 5 // DeleteApplication
+==
+bnz delete_app
+err // unexpected value
+
+// block opt_in
+opt_in:
+  // Disallow Opt In
+  // exit(0)
+  pushint 0
+  return
+
+// block close_out
+close_out:
+  // Disallow Closing Out
+  // exit(0)
+  pushint 0
+  return
+
+// block update_app
+update_app:
+  // Handle Update App
+  // Only allow the Creator to update the app
+  // assert(Txn.Sender == Global.CreatorAddress)
+  txn Sender
+  global CreatorAddress
+  ==
+  assert
+  // (for now)
+  // exit(1)
+  pushint 1
+  return
+
+// block delete_app
+delete_app:
+  // Handle Delete App
+  // Only allow the Creator to delete the app
+  // assert(Txn.Sender == Global.CreatorAddress)
+  txn Sender
+  global CreatorAddress
+  ==
+  assert
+  // (for now)
+  // exit(1)
+  pushint 1
+  return
+
+// block main
+main:
+  
+  // assert(Txn.RekeyTo == Global.ZeroAddress)
+  txn RekeyTo
+  global ZeroAddress
+  ==
+  assert
+  
+  // switch Txn.ApplicationArgs[0]:
+  txna ApplicationArgs 0
+  pushbytes "update_params"
+  ==
+  bnz update_params
+  txna ApplicationArgs 0
+  pushbytes "create_bid"
+  ==
+  bnz create_bid
+  txna ApplicationArgs 0
+  pushbytes "cancel_bid"
+  ==
+  bnz cancel_bid
+  txna ApplicationArgs 0
+  pushbytes "add_reputation"
+  ==
+  bnz add_reputation
+  txna ApplicationArgs 0
+  pushbytes "withdraw"
+  ==
+  bnz withdraw
+  err // unexpected value
+  
+  // block add:
+  //     # Add 2 integers
+  //     int x = btoi(Txn.ApplicationArgs[1])
+  //     int y = btoi(Txn.ApplicationArgs[2])
+  //     int result = x + y
+  //     abi_return(abi_encode_uint64(result))
+  //     exit(1)
+  // end
+  
+  // block mulw:
+  //     # Multiply 2 integers, returing a uint128
+  //     bytes x = Txn.ApplicationArgs[1]
+  //     bytes y = Txn.ApplicationArgs[2]
+  //     bytes result = x b* y
+  //     abi_return(abi_encode_uint128(result))
+  //     exit(1)
+  // end
+  
+  
+  // block hello:
+  //     # Return a greeting
+  //     bytes name = abi_decode_string(Txn.ApplicationArgs[1])
+  //     bytes result = concat("Hello ", name)
+  //     abi_return(abi_encode_string(result))
+  //     exit(1)
+  // end
+  
+  // block send:
+  //     # Send some Algo to the given address
+  //     bytes address = Txn.ApplicationArgs[1]
+  //     inner_txn:
+  //         TypeEnum: Pay
+  //         Receiver: address
+  //         Amount: 10000000
+  //         Fee: 0
+  //     end
+  //     exit(1)
+  // end
+  
+  // block store_data:
+  //     # Store some fixed size data in a box with the specified key
+  //     bytes key = Txn.ApplicationArgs[1]
+  //     bytes data = Txn.ApplicationArgs[2]
+  //     box_put(key, data)
+  //     exit(1)
+  // end
+  
+  // block store_tuple:
+  //     # Store some structured data in a box with the specified key
+  //     bytes key = Txn.ApplicationArgs[1]
+  //     # Item data = Txn.ApplicationArgs[2]
+  //     # make some assertion about the data for the fun of it
+  //     # assert(data.owner == Txn.Sender)
+  //     # box_put(key, data)
+  //     exit(1)
+  // end
+  
+  // block balance:
+  //     # Return balance of the specified account
+  //     int result = balance(Txn.Accounts[btoi(Txn.ApplicationArgs[1])])
+  //     abi_return(abi_encode_uint64(result))
+  //     exit(1)
+  // end
+
+// block update_params
+update_params:
+  // exit(1)
+  pushint 1
+  return
+
+// block create_bid
+create_bid:
+  
+  // check
+  // assert(Gtxn[0].Type == Axfer)
+  gtxn 0 Type
+  pushint 4 // Axfer
+  ==
+  assert
+  // assert(Gtxn[0].AssetReceiver == Global.CurrentApplicationAddress)
+  gtxn 0 AssetReceiver
+  global CurrentApplicationAddress
+  ==
+  assert
+  // assert(Gtxn[1].Type == Appl)
+  gtxn 1 Type
+  pushint 6 // Appl
+  ==
+  assert
+  // assert(Gtxn[1].Sender == Gtxn[0].Sender)
+  gtxn 1 Sender
+  gtxn 0 Sender
+  ==
+  assert
+  // assert(Gtxn[1].Receiver == FX_APP)
+  gtxn 1 Receiver
+  pushint 178969021 // FX_APP
+  ==
+  assert
+  // assert(Gtxn[0].XferAsset == Gtxn[1].Assets[0])
+  gtxn 0 XferAsset
+  gtxna 1 Assets 0
+  ==
+  assert
+  // assert(Global.GroupID == 2)
+  global GroupID
+  pushint 2
+  ==
+  assert
+  // assert(Txn.Sender == Gtxn[0].Sender)
+  txn Sender
+  gtxn 0 Sender
+  ==
+  assert
+  
+  // bytes box_content [slot 0]
+  
+  // bytes parent_bid = Txn.ApplicationArgs[1]
+  // box_content = concat(box_content, Txn.ApplicationArgs[1])
+  load 0 // box_content
+  txna ApplicationArgs 1
+  concat
+  store 0 // box_content
+  // box_content = concat(box_content, ".")
+  load 0 // box_content
+  pushbytes "."
+  concat
+  store 0 // box_content
+  // bytes bidder = Txn.Sender
+  // box_content = concat(box_content, Txn.Sender)
+  load 0 // box_content
+  txn Sender
+  concat
+  store 0 // box_content
+  // box_content = concat(box_content, ".")
+  load 0 // box_content
+  pushbytes "."
+  concat
+  store 0 // box_content
+  // bytes fairmarket_address = Txn.ApplicationArgs[2]
+  // box_content = concat(box_content, Txn.ApplicationArgs[2])
+  load 0 // box_content
+  txna ApplicationArgs 2
+  concat
+  store 0 // box_content
+  // box_content = concat(box_content, ".")
+  load 0 // box_content
+  pushbytes "."
+  concat
+  store 0 // box_content
+  // bytes currency_id = itob(Gtxn[0].XferAsset)
+  // box_content = concat(box_content, itob(Gtxn[0].XferAsset))
+  load 0 // box_content
+  gtxn 0 XferAsset
+  itob
+  concat
+  store 0 // box_content
+  // box_content = concat(box_content, ".")
+  load 0 // box_content
+  pushbytes "."
+  concat
+  store 0 // box_content
+  // bytes currency_quantity = itob(Gtxn[0].AssetAmount)
+  // box_content = concat(box_content, itob(Gtxn[0].AssetAmount))
+  load 0 // box_content
+  gtxn 0 AssetAmount
+  itob
+  concat
+  store 0 // box_content
+  // box_content = concat(box_content, ".")
+  load 0 // box_content
+  pushbytes "."
+  concat
+  store 0 // box_content
+  // bytes fx = Gtxn[1].LastLog [slot 1]
+  gtxn 1 LastLog
+  store 1 // fx
+  // box_content = concat(box_content, fx)
+  load 0 // box_content
+  load 1 // fx
+  concat
+  store 0 // box_content
+  // box_content = concat(box_content, ".")
+  load 0 // box_content
+  pushbytes "."
+  concat
+  store 0 // box_content
+  
+  // bytes type [slot 2]
+  // if fx == "SUBJECTIVE":
+    load 1 // fx
+    pushbytes "SUBJECTIVE"
+    ==
+    bz l1_else
+    // then:
+      // type = "S"
+      pushbytes "S"
+      store 2 // type
+    b l1_end
+    l1_else:
+    // else:
+      // int fx_n = extract_uint64(fx, 0) [slot 3]
+      load 1 // fx
+      pushint 0
+      extract_uint64
+      store 3 // fx_n
+      // int fx_d = extract_uint64(fx, 8) [slot 4]
+      load 1 // fx
+      pushint 8
+      extract_uint64
+      store 4 // fx_d
+      // int currency_quantity_after_fx = (Gtxn[0].AssetAmount * fx_n) / fx_d [slot 5]
+      gtxn 0 AssetAmount
+      load 3 // fx_n
+      *
+      load 4 // fx_d
+      /
+      store 5 // currency_quantity_after_fx
+      // int currency_quantity_after_fx = Gtxn[0].AssetAmount * fx_n / fx_d
+      
+      // int min = app_global_get("MIN") [slot 6]
+      pushbytes "MIN"
+      app_global_get
+      store 6 // min
+      // int min_precision_n = app_global_get("MIN_PRECISION_N") [slot 7]
+      pushbytes "MIN_PRECISION_N"
+      app_global_get
+      store 7 // min_precision_n
+      // int min_precision_d = app_global_get("MIN_PRECISION_D") [slot 8]
+      pushbytes "MIN_PRECISION_D"
+      app_global_get
+      store 8 // min_precision_d
+      // int chrony_upper_bound = min * (1 + (min_precision_n / min_precision_d)) [slot 9]
+      load 6 // min
+      pushint 1
+      load 7 // min_precision_n
+      load 8 // min_precision_d
+      /
+      +
+      *
+      store 9 // chrony_upper_bound
+      // int chrony_lower_bound = min * (1 - (min_precision_n / min_precision_d)) [slot 10]
+      load 6 // min
+      pushint 1
+      load 7 // min_precision_n
+      load 8 // min_precision_d
+      /
+      -
+      *
+      store 10 // chrony_lower_bound
+      
+      // if currency_quantity_after_fx < chrony_lower_bound:
+        load 5 // currency_quantity_after_fx
+        load 10 // chrony_lower_bound
+        <
+        bz l2_elif_0
+        // then:
+          // if min == 0:
+            load 6 // min
+            pushint 0
+            ==
+            bz l3_end
+            // then:
+              // exit(0)
+              pushint 0
+              return
+            l3_end: // end
+          // type = "L"
+          pushbytes "L"
+          store 2 // type
+        b l2_end
+        l2_elif_0:
+        // elif currency_quantity_after_fx < chrony_upper_bound:
+        load 5 // currency_quantity_after_fx
+        load 9 // chrony_upper_bound
+        <
+        bz l2_else
+          // type = "C"
+          pushbytes "C"
+          store 2 // type
+        b l2_end
+        l2_else:
+        // else:
+          // type = "H"
+          pushbytes "H"
+          store 2 // type
+        l2_end: // end
+    l1_end: // end
+  // box_content = concat(box_content, type)
+  load 0 // box_content
+  load 2 // type
+  concat
+  store 0 // box_content
+  // box_content = concat(box_content, ".")
+  load 0 // box_content
+  pushbytes "."
+  concat
+  store 0 // box_content
+  
+  // int e = Global.GroupSize-1 [slot 11]
+  global GroupSize
+  pushint 1
+  -
+  store 11 // e
+  // for i in 0:e:
+    pushint 0
+    store 12 // i
+    l4_for:
+    load 12 // i
+    load 11 // e
+    ==
+    bnz l4_end
+    // box_content = concat(box_content, Gtxn[i].Note)
+    load 0 // box_content
+    load 12 // i
+    gtxns Note
+    concat
+    store 0 // box_content
+    load 12 // i
+    pushint 1
+    +
+    store 12 // i
+    b l4_for
+    l4_end: // end
+  
+  // int box_existed = box_create(Global.GroupID, len(box_content)) [slot 12]
+  global GroupID
+  load 0 // box_content
+  len
+  box_create
+  store 12 // box_existed
+  // if box_existed == 0:
+    load 12 // box_existed
+    pushint 0
+    ==
+    bz l5_end
+    // then:
+      // exit(0)
+      pushint 0
+      return
+    l5_end: // end
+  // box_replace(Global.GroupID, 0, box_content)
+  global GroupID
+  pushint 0
+  load 0 // box_content
+  box_replace
+  
+  // exit(1)
+  pushint 1
+  return
+  
+
+// block cancel_bid
+cancel_bid:
+  // exit(1)
+  pushint 1
+  return
+// block add_reputation
+add_reputation:
+  // exit(1)
+  pushint 1
+  return
+// block withdraw
+withdraw:
+  // exit(1)
+  pushint 1
+  return
+
+// func abi_return_int(result):
+//     # log(concat("\x15\x1f\x7c\x75", result))
+//     # log(result)
+//     int r = result
+//     teal:
+//         store 0
+//     end
+//     log(itob(result0))
+//     return
+// end
+
+// func abi_return(result: bytes):
+__func__abi_return:
+store 13 // result
+// log(concat("\x15\x1f\x7c\x75", result))
+// log(result)
+load 13 // result
+log
+// return
+retsub
+
+// func abi_decode_string(value: bytes) bytes:
+//     # return the content portion of the string, skipping the first 2 bytes which encode the length
+//     return extract(2, 0, value)
+// end
+
+// func abi_encode_string(value: bytes) bytes:
+//     # return the bytestring with a uint16 prefix denoting the length
+//     return concat(extract(6, 2, itob(len(value))), value)
+// end
+
+// func abi_encode_uint64(value: int) bytes:
+__func__abi_encode_uint64:
+store 14 // value
+// return itob(value)
+load 14 // value
+itob
+retsub
+
+// func abi_encode_uint32(value: int) bytes:
+//     # return the last 4 bytes
+//     return extract(4, 4, itob(value))
+// end
+
+// func abi_encode_uint16(value: int) bytes:
+//     # return the last 2 bytes
+//     return extract(6, 2, itob(value))
+// end
+
+// func abi_encode_uint8(value: int) bytes:
+//     # return the last 1 byte
+//     return extract(7, 1, itob(value))
+// end
+
+// func abi_encode_uint128(value: bytes) bytes:
+//     # return 16 bytes with zero padding
+//     return bzero(16) b| value
+// end

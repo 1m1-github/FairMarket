@@ -32,6 +32,9 @@ goal app update --app-id=$APP_ID --from=$CREATOR --approval-prog $TEAL_DIR/$APPR
 # API
 #####
 
+# update_params [seller]
+
+
 # create bid/trade [bidder]
 goal asset send --from $BIDDER --to $SELLER_FAIRMARKET_ACCOUNT --amount $AMOUNT --assetid $ASSET_ID --note "1\n" --out $TXNS_DIR/asset_send.txn
 goal app call --from $BIDDER --app-id $FX_APP --foreign-app $LP_APP --foreign-asset $ASSET_ID --app-account $LP_ACCOUNT --note "2\n" --out $TXNS_DIR/FX.txn

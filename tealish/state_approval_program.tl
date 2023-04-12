@@ -92,6 +92,7 @@ block main:
     assert(Txn.RekeyTo == Global.ZeroAddress)
 
     switch Txn.ApplicationArgs[0]:
+        "update_params": update_params
         "create_bid": create_bid
         "cancel_bid": cancel_bid
         "add_reputation": add_reputation
@@ -163,6 +164,10 @@ block main:
     # end
 end
 
+block update_params:
+    exit(1)
+end
+
 block create_bid:
     
     # check
@@ -172,12 +177,83 @@ block create_bid:
     assert(Gtxn[1].Type == Appl)
     assert(Gtxn[1].Sender == Gtxn[0].Sender)
     assert(Gtxn[1].Receiver == FX_APP)
-    assert(Gtxn[0].XferAsset == Gtxna[1].Assets[0])
+    assert(Gtxn[0].XferAsset == Gtxn[1].Assets[0])
     assert(Global.GroupID == 2)
     assert(Txn.Sender == Gtxn[0].Sender)
 
+    bytes box_content
 
+    # bytes parent_bid = Txn.ApplicationArgs[1]
+    box_content = concat(box_content, Txn.ApplicationArgs[1])
+    box_content = concat(box_content, ".")
+    # bytes bidder = Txn.Sender
+    box_content = concat(box_content, Txn.Sender)
+    box_content = concat(box_content, ".")
+    # bytes fairmarket_address = Txn.ApplicationArgs[2]
+    box_content = concat(box_content, Txn.ApplicationArgs[2])
+    box_content = concat(box_content, ".")
+    # bytes currency_id = itob(Gtxn[0].XferAsset)
+    box_content = concat(box_content, itob(Gtxn[0].XferAsset))
+    box_content = concat(box_content, ".")
+    # bytes currency_quantity = itob(Gtxn[0].AssetAmount)
+    box_content = concat(box_content, itob(Gtxn[0].AssetAmount))
+    box_content = concat(box_content, ".")
+    bytes fx = Gtxn[1].LastLog
+    box_content = concat(box_content, fx)
+    box_content = concat(box_content, ".")
 
+    bytes type
+    if fx == "SUBJECTIVE":
+        type = "S"
+    else:
+        int fx_n = extract_uint64(fx, 0)
+        int fx_d = extract_uint64(fx, 8)
+        int currency_quantity_after_fx = (Gtxn[0].AssetAmount * fx_n) / fx_d
+        # int currency_quantity_after_fx = Gtxn[0].AssetAmount * fx_n / fx_d
+
+        int min = app_global_get("MIN")
+        int min_precision_n = app_global_get("MIN_PRECISION_N")
+        int min_precision_d = app_global_get("MIN_PRECISION_D")
+        int chrony_upper_bound = min * (1 + (min_precision_n / min_precision_d))
+        int chrony_lower_bound = min * (1 - (min_precision_n / min_precision_d))
+
+        if currency_quantity_after_fx < chrony_lower_bound:
+            if min == 0:
+                exit(0)
+            end
+            type = "L"
+        elif currency_quantity_after_fx < chrony_upper_bound:
+            type = "C"
+        else:
+            type = "H"
+        end
+    end
+    box_content = concat(box_content, type)
+    box_content = concat(box_content, ".")
+
+    int e = Global.GroupSize-1
+    for i in 0:e:
+        box_content = concat(box_content, Gtxn[i].Note)
+    end
+
+    int box_existed = box_create(Global.GroupID, len(box_content))
+    if box_existed == 0:
+        exit(0)
+    end
+    box_replace(Global.GroupID, 0, box_content)
+
+    exit(1)
+
+end
+
+block cancel_bid:
+    exit(1)
+end
+block add_reputation:
+    exit(1)
+end
+block withdraw:
+    exit(1)
 end
 
 # func abi_return_int(result):

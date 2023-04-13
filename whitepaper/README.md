@@ -1,9 +1,9 @@
 # <b><p align="center">FairMarket ~ the provably fairest and most inclusive market model</p></b>
-#### <p align="center">[email@1m1.io](https://github.com/1m1-github/FairMarket/whitepaper/Notes.md#acknowledgement)</p>
+#### <p align="center">[email@1m1.io](https://github.com/1m1-github/FairMarket/blob/main/whitepaper/Notes.md#acknowledgement)</p>
 
 <br></br>
 ## <p align="center">Abstract</p>
-<p align="center">This <a href="https://github.com/1m1-github/FairMarket/whitepaper/Notes.md#whitepaper">whitepaper</a> describes a novel, multi-dimensional, infinitely inclusive market model. The described model yields infinite types of new market dynamics and traditional markets as special cases, based on very few parameters. As the market allows any supply of arbitrarily small or large value to be traded in any currency, incl. subjective value currencies, any resulting liquid market must then find the fairest value of the supply. </p>
+<p align="center">This <a href="https://github.com/1m1-github/FairMarket/blob/main/whitepaper/Notes.md#whitepaper">whitepaper</a> describes a novel, multi-dimensional, infinitely inclusive market model. The described model yields infinite types of new market dynamics and traditional markets as special cases, based on very few parameters. As the market allows any supply of arbitrarily small or large value to be traded in any currency, incl. subjective value currencies, any resulting liquid market must then find the fairest value of the supply. </p>
 <br></br>
 
 # <b>I. Definitions</b>
@@ -15,7 +15,7 @@
 
 Assume we have a **seller** with a finite **supply** $\mathcal{S}$ and there exists a **demand** $\mathcal{D}$ consisting of **bid**s.
 
-A **market** $\mathcal{M}$ is a function that determines the *next* **bid** to be [serviced](https://github.com/2i2i/whitepaper/blob/main/Notes.md#all-trade-is-sequential). Formally,
+A **market** $\mathcal{M}$ is a function that determines the *next* **bid** to be [serviced](https://github.com/1m1-github/FairMarket/blob/main/whitepaper/Notes.md#all-trade-is-sequential). Formally,
 
 $$\mathcal{M}(\mathcal{S}, \mathcal{D}) = B$$
 
@@ -39,7 +39,7 @@ This then allows for an ordering of the **bid**s
 
 $$\mathcal{D} = [B_1, \ldots, B_N] = [\mathcal{M}^1(∅), \mathcal{M}^2(∅), \ldots, \mathcal{M}^N(∅)] = \\\{\mathcal{M}^\text{rank}(∅)\\\}_{\text{rank}=1}^N$$
 
-In this paper, we will define a partial ordering and a total ordering that is **[fairest](https://github.com/2i2i/whitepaper/blob/main/Notes.md#fairest)**, most **[inclusive](https://github.com/2i2i/whitepaper/blob/main/Notes.md#most-inclusive)** and accomodates [all](https://github.com/2i2i/whitepaper/blob/main/Notes.md#all-markets) types of **market**s, as well as innovating new types of **market**s with a generic framework.
+In this paper, we will define a partial ordering and a total ordering that is **[fairest](https://github.com/1m1-github/FairMarket/blob/main/whitepaper/Notes.md#fairest)**, most **[inclusive](https://github.com/1m1-github/FairMarket/blob/main/whitepaper/Notes.md#most-inclusive)** and accomodates [all](https://github.com/1m1-github/FairMarket/blob/main/whitepaper/Notes.md#all-markets) types of **market**s, as well as innovating new types of **market**s with a generic framework.
 
 <br></br>
 ## Parameters
@@ -73,13 +73,13 @@ The **amount** $A$ contains a quantity $q$, a **currency** $\text{ccy}$ and an e
 <br></br>
 ## Currency and FX
 
-Let $\mathcal{C}$ be the universe of all existing [currencies](https://github.com/2i2i/whitepaper/blob/main/Notes.md#currency).
+Let $\mathcal{C}$ be the universe of all existing [currencies](https://github.com/1m1-github/FairMarket/blob/main/whitepaper/Notes.md#currency).
 
 Then
 
 $$\mathcal{C} = \mathcal{C}_\text{obj} \text{  } \dot{\cup} \text{  } \mathcal{C}_\text{sub}$$
 
-that is, any **currency** either has [objective value xor subjective value](https://github.com/2i2i/whitepaper/blob/main/Notes.md#objective-vs-subjective-value).
+that is, any **currency** either has [objective value xor subjective value](https://github.com/1m1-github/FairMarket/blob/main/whitepaper/Notes.md#objective-vs-subjective-value).
 
 We choose some
 
@@ -109,12 +109,12 @@ The **amount** $A$ of each **objective** **bid** can be transformed into the cho
 
 $$B(T, A = (q, \text{ccy}, \text{FX}), \mathcal{P}) \rightarrow B_\text{base}(T, A = (\text{FX}\cdot q , \text{ccy}_\text{base}, \text{FX}\equiv 1), \mathcal{P})$$
 
-> This means, without loss of generality, we can [assume](https://github.com/2i2i/whitepaper/blob/main/Notes.md#assuming) all **objective bids** to be denominated in the **base currency**.
+> This means, without loss of generality, we can [assume](https://github.com/1m1-github/FairMarket/blob/main/whitepaper/Notes.md#assuming) all **objective bids** to be denominated in the **base currency**.
 
 <br></br>
 ## **Bid** Categories
 
-[Assuming](https://github.com/2i2i/whitepaper/blob/main/Notes.md#assuming) that the **min** value $\underline{M}$ is also in the **base currency**, we [define](https://github.com/2i2i/whitepaper/blob/main/Notes.md#practical-chrony) the following 4 **bid** categories:
+[Assuming](https://github.com/1m1-github/FairMarket/blob/main/whitepaper/Notes.md#assuming) that the **min** value $\underline{M}$ is also in the **base currency**, we [define](https://github.com/1m1-github/FairMarket/blob/main/whitepaper/Notes.md#practical-chrony) the following 4 **bid** categories:
 
 $$\text{chrony (\bf{C\bf{HR}})} \Leftrightarrow B \text{ is objective} \text{ and } q = \underline{M}$$
 
@@ -141,7 +141,7 @@ the market is activated
 
 $$0 < \sum_\square\mathcal{I}_\square = \sum\mathcal{I}$$
 
-and the **[lurkers](https://github.com/2i2i/whitepaper/blob/main/Notes.md#why-lurkers)** never get serviced
+and the **[lurkers](https://github.com/1m1-github/FairMarket/blob/main/whitepaper/Notes.md#why-lurkers)** never get serviced
 
 $$\mathcal{I}_\text{\bf{LURK}} = 0$$
 
@@ -165,18 +165,18 @@ We want to create a **market** function such that:
 
 - **importance** is respected
 
-- order of **objective** **bid**s is objectively [deterministic](https://github.com/2i2i/whitepaper/blob/main/Notes.md#deterministic)
+- order of **objective** **bid**s is objectively [deterministic](https://github.com/1m1-github/FairMarket/blob/main/whitepaper/Notes.md#deterministic)
 
 - internal category order is maintained
 
-- worst case **rank** for **chrony** **bids** is [finite](https://github.com/2i2i/whitepaper/blob/main/Notes.md#chrony-only-worst-case-finite)
+- worst case **rank** for **chrony** **bids** is [finite](https://github.com/1m1-github/FairMarket/blob/main/whitepaper/Notes.md#chrony-only-worst-case-finite)
 
 - the **seller** can use it's own subjective value function to value **subjective bid**s
 
 <br></br>
 ## Internal category order
 
-**Chrony** **bid**s are **time** ordered, **highroller** **bids** are **value** ordered, **subjective** **bid**s are ordered by each **seller** *subjectively* and **lurker** **bid**s live in the [projective infinity](https://github.com/2i2i/whitepaper/blob/main/Notes.md#projective-infinity), never serviced.
+**Chrony** **bid**s are **time** ordered, **highroller** **bids** are **value** ordered, **subjective** **bid**s are ordered by each **seller** *subjectively* and **lurker** **bid**s live in the [projective infinity](https://github.com/1m1-github/FairMarket/blob/main/whitepaper/Notes.md#projective-infinity), never serviced.
 
 <br></br>
 ## Traditional **market**s as special cases
@@ -244,7 +244,7 @@ $$\mathcal{I} = \begin{pmatrix} \nu_\text{\bf{C\bf{HR}}} \\ \nu_\text{\bf{HR}} \
 
 Given the previous max $\sum\mathcal{I}-1$ number of bids $[B_n,\ldots,B_m]$, we want to choose the next **bid** $B_\text{next}$.
 
-First, we choose the next **bid** **category** as the **category** that brings our realized **importance** [closest](https://github.com/2i2i/whitepaper/blob/main/Notes.md#distance) ($\delta$) to the target **importance** as set by the seller.
+First, we choose the next **bid** **category** as the **category** that brings our realized **importance** [closest](https://github.com/1m1-github/FairMarket/blob/main/whitepaper/Notes.md#distance) ($\delta$) to the target **importance** as set by the seller.
 
 To that end, calculate the realized **importance** $\hat{\mathcal{I}}$ including an *assumed* next **bid** **category** $\text{BC}(B_\text{next})$
 
@@ -264,9 +264,9 @@ If the next **category** should be $\text{\bf{SUBJ}}$, then $B_\text{next}$ can 
 
 1. Let the **seller** choose one xor none from all the existing $\text{\bf{SUBJ}}$ **bid**s.
 
->Either case results in a [total](https://github.com/2i2i/whitepaper/blob/main/Notes.md#total-ordering), deterministic and objective ordering of all the **objective** **bids** and a total subjective ordering of all the **subjective** **bid**s, both interwoven according to the chosen **importance** $\mathcal{I}$.
+>Either case results in a [total](https://github.com/1m1-github/FairMarket/blob/main/whitepaper/Notes.md#total-ordering), deterministic and objective ordering of all the **objective** **bids** and a total subjective ordering of all the **subjective** **bid**s, both interwoven according to the chosen **importance** $\mathcal{I}$.
 
-A discussion of the choices is found [here](https://github.com/2i2i/whitepaper/blob/main/Notes.md#full-subj-choice-is-better).
+A discussion of the choices is found [here](https://github.com/1m1-github/FairMarket/blob/main/whitepaper/Notes.md#full-subj-choice-is-better).
 
 
 Note the next **category** can never be $\text{\bf{LURK}}$, as $\nu_\text{\bf{LURK}}=0$. The **seller** can convert $\text{\bf{LURK}}$ **bid**s into $\text{\bf{C\bf{HR}}}$ or $\text{\bf{HR}}$ **bid**s or vice-versa by changing the **minimum** $\underline{M}$.
@@ -302,7 +302,7 @@ This market model is **infinitely inclusive**.
 <br></br>
 ## Smart contracts
 
-Smart contracts are autonomous, decentralized apps. The described market model is implemented as a smart contract for the following reasons: **infinite inclusivity**, zero credit risk, perfect [transparency](https://github.com/2i2i/whitepaper/blob/main/Notes.md#auditability-is-better), ability to use any kind of **currency**.
+Smart contracts are autonomous, decentralized apps. The described market model is implemented as a smart contract for the following reasons: **infinite inclusivity**, zero credit risk, perfect [transparency](https://github.com/1m1-github/FairMarket/blob/main/whitepaper/Notes.md#auditability-is-better), ability to use any kind of **currency**.
 
 <br></br>
 ## **Fungability**
@@ -330,7 +330,7 @@ $$\text{ccy}_2 \approx \text{CFS}(\text{ccy}_1, \phi)$$
 
 A **CFS** never rounds and only makes exact exchanges.
 
-Using a **CFS**, we have increased the fungability of [any](https://github.com/2i2i/whitepaper/blob/main/Notes.md#fungable-nfts) **currency** $\text{ccy}$
+Using a **CFS**, we have increased the fungability of [any](https://github.com/1m1-github/FairMarket/blob/main/whitepaper/Notes.md#fungable-nfts) **currency** $\text{ccy}$
 
 $$\mathbb{F}(\text{CFS}(ccy, \phi)) = \phi \cdot \mathbb{F}(ccy)$$
 
@@ -367,7 +367,7 @@ All these superlatives make this market model the most open possible.
 
 > Assuming liquidity, this market model thus provides the fairest valuation of any supply.
 
-By changing the parameters, minimum $\underline{M}$ and importance $\mathcal{I}$, the seller can run a [multi-dim optimisation](https://github.com/2i2i/whitepaper/blob/main/Notes.md#multidim-optimisation) to find the type of market that maximises it's value.
+By changing the parameters, minimum $\underline{M}$ and importance $\mathcal{I}$, the seller can run a [multi-dim optimisation](https://github.com/1m1-github/FairMarket/blob/main/whitepaper/Notes.md#multidim-optimisation) to find the type of market that maximises it's value.
 
 <br></br>
 ## Provably fairest economy
@@ -380,7 +380,7 @@ Micro-economics teaches us that (specilization and) *fair* trading improves the 
 ## Maximum value $\Leftrightarrow$ Supply = **time**
 
 If this paper is correct in that the described market model results in the **fairest** valuation, then it should be used for all **market**s. Especially the most valuable market:
-[**time**](https://github.com/2i2i/whitepaper/blob/main/Notes.md#live-in-the-now)
+[**time**](https://github.com/1m1-github/FairMarket/blob/main/whitepaper/Notes.md#live-in-the-now)
 
 - Everyone has **time**
 - Everyone knows that **time** is most valuable.

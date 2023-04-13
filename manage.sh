@@ -46,6 +46,9 @@ goal app info --app-id $SELLER_FAIRMARKET_APP
 export SELLER_FAIRMARKET_ACCOUNT=JBWD32XGDJOD4F2I6PGE3ATSMR5UNF4RC4U6P6BUI4FP74GNLJTZROBW5I
 goal app update --from=$SELLER --app-id=$SELLER_FAIRMARKET_APP --approval-prog $TEAL_DIR/$APPROVAL_FILE_NAME.teal --clear-prog $TEAL_DIR/$CLEAR_FILE_NAME.teal
 
+tealish compile $TEALISH_DIR/$APPROVAL_FILE_NAME.tl
+goal app update --from=$SELLER --app-id=$SELLER_FAIRMARKET_APP --approval-prog $TEAL_DIR/$APPROVAL_FILE_NAME.teal --clear-prog $TEAL_DIR/$CLEAR_FILE_NAME.teal
+
 # API
 #####
 
@@ -63,11 +66,9 @@ export BID_ID="str:7c34bfe6e537accbe6d4827144546f3c"
 export NOTE="hellohellohellohellohello"
 export BLOCK=29115361
 # BID_ID = hash($BIDDER$NOTE$BLOCK)
-tealish compile $TEALISH_DIR/$APPROVAL_FILE_NAME.tl
-goal app update --from=$SELLER --app-id=$SELLER_FAIRMARKET_APP --approval-prog $TEAL_DIR/$APPROVAL_FILE_NAME.teal --clear-prog $TEAL_DIR/$CLEAR_FILE_NAME.teal
 goal app call --from $BIDDER --app-id $FX_APP --foreign-app $LP_APP --foreign-asset $ASSET_ID --app-account $LP_ACCOUNT --note $NOTE --out $TXNS_DIR/FX.txn
 goal clerk send --from $BIDDER --to $SELLER_FAIRMARKET_ACCOUNT --amount 239700 --note $NOTE --out $TXNS_DIR/algo_send.txn
-goal app call --from $BIDDER --app-id $SELLER_FAIRMARKET_APP --foreign-asset $ASSET_ID --app-arg "str:create_bid" --app-arg $PARENT_BID --app-arg $BIDDER_FAIRMARKET_APP --app-arg $BID_ID --box $BID_ID --note $NOTE --fee 1000 --out $TXNS_DIR/app_call.txn
+goal app call --from $BIDDER --app-id $SELLER_FAIRMARKET_APP --foreign-asset $ASSET_ID --app-arg "str:create_bid" --app-arg $PARENT_BID --app-arg $BIDDER_FAIRMARKET_APP --app-arg $BID_ID --box $BID_ID --note $NOTE --out $TXNS_DIR/app_call.txn
 goal asset send --from $BIDDER --to $SELLER_FAIRMARKET_ACCOUNT --amount $AMOUNT --assetid $ASSET_ID --note $NOTE --out $TXNS_DIR/asset_send.txn
 goal app call --from $BIDDER --app-id $SELLER_FAIRMARKET_APP --app-arg "str:add_data" --note $NOTE --out $TXNS_DIR/note_extra_1.txn
 cat $TXNS_DIR/FX.txn $TXNS_DIR/algo_send.txn $TXNS_DIR/app_call.txn $TXNS_DIR/asset_send.txn $TXNS_DIR/note_extra_1.txn > $TXNS_DIR/combined.txn
@@ -78,20 +79,16 @@ goal clerk dryrun -t $TXNS_DIR/create_bid.stxn --dryrun-dump -o $TXNS_DIR/dryrun
 tealdbg debug $TEAL_DIR/$APPROVAL_FILE_NAME.teal -d $TXNS_DIR/dryrun.json --group-index 2 --mode application
 
 # cancel bid [bidder]
-export BID_ID="str:a"
-
 tealish compile $TEALISH_DIR/$APPROVAL_FILE_NAME.tl
 goal app update --from=$SELLER --app-id=$SELLER_FAIRMARKET_APP --approval-prog $TEAL_DIR/$APPROVAL_FILE_NAME.teal --clear-prog $TEAL_DIR/$CLEAR_FILE_NAME.teal
 
-goal app call --from $BIDDER --app-id $SELLER_FAIRMARKET_APP --app-arg "str:cancel_bid" --app-arg $BID_ID --box $BID_ID --foreign-asset $ASSET_ID --out $TXNS_DIR/cancel_bid.txn --fee 1000
+goal app call --from $BIDDER --app-id $SELLER_FAIRMARKET_APP --app-arg "str:cancel_bid" --app-arg $BID_ID --box $BID_ID --foreign-asset $ASSET_ID --out $TXNS_DIR/cancel_bid.txn --fee 2000
 goal app call --from $BIDDER --app-id $SELLER_FAIRMARKET_APP --app-arg "str:add_data" --out $TXNS_DIR/cancel_bid_add_budget_1.txn
 goal app call --from $BIDDER --app-id $SELLER_FAIRMARKET_APP --app-arg "str:add_data" --out $TXNS_DIR/cancel_bid_add_budget_2.txn
 cat $TXNS_DIR/cancel_bid.txn $TXNS_DIR/cancel_bid_add_budget_1.txn $TXNS_DIR/cancel_bid_add_budget_2.txn > $TXNS_DIR/combined.txn
 goal clerk group --infile $TXNS_DIR/combined.txn --outfile $TXNS_DIR/cancel_bid.txn
 goal clerk sign --infile $TXNS_DIR/cancel_bid.txn --outfile $TXNS_DIR/cancel_bid.stxn
 goal clerk rawsend --filename $TXNS_DIR/cancel_bid.stxn
-
-goal app read --app-id $SELLER_FAIRMARKET_APP --global
 
 goal clerk dryrun -t $TXNS_DIR/cancel_bid.stxn --dryrun-dump -o $TXNS_DIR/dryrun.json
 tealdbg debug $TEAL_DIR/$APPROVAL_FILE_NAME.teal -d $TXNS_DIR/dryrun.json --group-index 0 --mode application

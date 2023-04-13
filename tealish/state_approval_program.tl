@@ -156,7 +156,6 @@ block update_params:
 end
 
 block create_bid:
-    
     # indices
     int fx_call_ix = 0
     int algo_send_ix = 1
@@ -199,11 +198,9 @@ block create_bid:
     box_replace(box_name, 0, box_content)
 
     exit(1)
-
 end
 
 block cancel_bid:
-
     bytes box_name = Txn.ApplicationArgs[1]
     int box_exists
     bytes box_contents
@@ -222,6 +219,20 @@ block cancel_bid:
         XferAsset: bid.currency_id
         Fee: 0
     end
+
+    # # opt-out if no balance? TODO (e.g. return subj currency reserve)
+    # int currency_balance
+    # currency_balance, _ = asset_holding_get(AssetBalance, 0, bid.currency_id)
+    # if currency_balance == 0:
+    #     inner_txn:
+    #         TypeEnum: Axfer
+    #         Sender: Global.CurrentApplicationAddress
+    #         AssetReceiver: bid.owner
+    #         AssetAmount: bid.currency_quantity
+    #         XferAsset: bid.currency_id
+    #         Fee: 0
+    #     end
+    # end
 
     _ = box_del(box_name)
 

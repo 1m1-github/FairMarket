@@ -249,6 +249,7 @@ end
 block withdraw:
     exit(1)
 end
+
 block add_data:
     exit(1)
 end
@@ -266,14 +267,14 @@ end
 # TODO assert input sizes, choose m appropriately
 func calc_type(asset_amount: int, fx: bytes) bytes:
 
-    if fx == "SUBJECTIVE":
+    int fx_n = extract_uint64(fx, 0)
+    int fx_d = extract_uint64(fx, 8)
+
+    if fx_n == 0 && fx_d == 0:
         return "S"
     end
 
     int m = 10000
-
-    int fx_n = extract_uint64(fx, 0)
-    int fx_d = extract_uint64(fx, 8)
 
     Params p = app_global_get("a")
     

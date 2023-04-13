@@ -1,9 +1,9 @@
-# <b><p align="center">2i2i ~ the provably fairest and most inclusive market model</p></b>
-#### <p align="center">[1m1@2i2i.app](https://github.com/2i2i/whitepaper/blob/main/Notes.md#acknowledgement)</p>
+# <b><p align="center">FairMarket ~ the provably fairest and most inclusive market model</p></b>
+#### <p align="center">[email@1m1.io](https://github.com/1m1-github/FairMarket/whitepaper/Notes.md#acknowledgement)</p>
 
 <br></br>
 ## <p align="center">Abstract</p>
-<p align="center">This <a href="https://github.com/1m1-github/whitepaper/blob/main/Notes.md#whitepaper">whitepaper</a> describes a novel, multi-dimensional, infinitely inclusive market model. The described model yields infinite types of new market dynamics and traditional markets as special cases, based on very few parameters. As the market allows any supply of arbitrarily small or large value to be traded in any currency, incl. subjective value currencies, any resulting liquid market must then find the fairest value of the supply. </p>
+<p align="center">This <a href="https://github.com/1m1-github/FairMarket/whitepaper/Notes.md#whitepaper">whitepaper</a> describes a novel, multi-dimensional, infinitely inclusive market model. The described model yields infinite types of new market dynamics and traditional markets as special cases, based on very few parameters. As the market allows any supply of arbitrarily small or large value to be traded in any currency, incl. subjective value currencies, any resulting liquid market must then find the fairest value of the supply. </p>
 <br></br>
 
 # <b>I. Definitions</b>

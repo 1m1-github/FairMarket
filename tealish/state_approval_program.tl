@@ -139,7 +139,10 @@ end
 
 block main:
 
-    assert(Txn.RekeyTo == Global.ZeroAddress)
+    int e = Global.GroupSize-1
+    for i in 0:e:
+        assert(Gtxn[i].RekeyTo == Global.ZeroAddress)
+    end
 
     switch Txn.ApplicationArgs[0]:
         "update_params": update_params
@@ -242,6 +245,7 @@ end
 block add_reputation:
     exit(1)
 end
+
 block withdraw:
     exit(1)
 end

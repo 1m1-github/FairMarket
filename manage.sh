@@ -79,20 +79,7 @@ goal clerk dryrun -t $TXNS_DIR/create_bid.stxn --dryrun-dump -o $TXNS_DIR/dryrun
 tealdbg debug $TEAL_DIR/$APPROVAL_FILE_NAME.teal -d $TXNS_DIR/dryrun.json --group-index 2 --mode application
 
 # cancel bid [bidder]
-tealish compile $TEALISH_DIR/$APPROVAL_FILE_NAME.tl
-goal app update --from=$SELLER --app-id=$SELLER_FAIRMARKET_APP --approval-prog $TEAL_DIR/$APPROVAL_FILE_NAME.teal --clear-prog $TEAL_DIR/$CLEAR_FILE_NAME.teal
-
-goal app call --from $BIDDER --app-id $SELLER_FAIRMARKET_APP --app-arg "str:cancel_bid" --app-arg $BID_ID --box $BID_ID --foreign-asset $ASSET_ID --out $TXNS_DIR/cancel_bid.txn --fee 2000
-goal app call --from $BIDDER --app-id $SELLER_FAIRMARKET_APP --app-arg "str:add_data" --out $TXNS_DIR/cancel_bid_add_budget_1.txn
-goal app call --from $BIDDER --app-id $SELLER_FAIRMARKET_APP --app-arg "str:add_data" --out $TXNS_DIR/cancel_bid_add_budget_2.txn
-cat $TXNS_DIR/cancel_bid.txn $TXNS_DIR/cancel_bid_add_budget_1.txn $TXNS_DIR/cancel_bid_add_budget_2.txn > $TXNS_DIR/combined.txn
-goal clerk group --infile $TXNS_DIR/combined.txn --outfile $TXNS_DIR/cancel_bid.txn
-goal clerk sign --infile $TXNS_DIR/cancel_bid.txn --outfile $TXNS_DIR/cancel_bid.stxn
-goal clerk rawsend --filename $TXNS_DIR/cancel_bid.stxn
-
-goal clerk dryrun -t $TXNS_DIR/cancel_bid.stxn --dryrun-dump -o $TXNS_DIR/dryrun.json
-tealdbg debug $TEAL_DIR/$APPROVAL_FILE_NAME.teal -d $TXNS_DIR/dryrun.json --group-index 0 --mode application
-goal clerk rawsend --filename $TXNS_DIR/cancel_bid.stxn
+goal app call --from $BIDDER --app-id $SELLER_FAIRMARKET_APP --app-arg "str:cancel_bid" --app-arg $BID_ID --box $BID_ID --foreign-asset $ASSET_ID --fee 2000
 
 # add reputation [bidder]
 export REPUTATION=1

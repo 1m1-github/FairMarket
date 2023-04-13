@@ -241,7 +241,7 @@ block create_bid:
     # bytes bidder = Txn.Sender
     box_content = concat(box_content, Txn.Sender)
     box_content = concat(box_content, ".")
-    # bytes fairmarket_address = Txn.ApplicationArgs[2]
+    # bytes bidder_fairmarket_address = Txn.ApplicationArgs[2]
     box_content = concat(box_content, Txn.ApplicationArgs[2])
     box_content = concat(box_content, ".")
     # bytes currency_id = itob(Gtxn[asset_send_ix].XferAsset)
@@ -264,9 +264,7 @@ block create_bid:
     end
 
     int box_existed = box_create(Txn.ApplicationArgs[3], len(box_content))
-    if box_existed == 0:
-        exit(0)
-    end
+    assert(box_existed == 1)
     box_replace(Txn.ApplicationArgs[3], 0, box_content)
 
     exit(1)
@@ -274,8 +272,75 @@ block create_bid:
 end
 
 block cancel_bid:
+
+    bytes box_name = Txn.ApplicationArgs[1]
+    int box_exists
+    bytes box_contents
+    box_exists, box_contents = box_get(box_name)
+    assert(box_exists == 1)
+
+    int e
+    # parent_bid
+    _, e = get_next_token(box_contents, 0)
+    # app_global_put("e1", itob(e))
+    # log("parent_bid")
+    # log(itob(e))
+
+    # bidder
+    bytes bidder
+    bidder, e = get_next_token(box_contents, e+1)
+    # app_global_put("d", bidder)
+    # app_global_put("e2", itob(e))
+    # log("bidder")
+    # log(bidder)
+    # log("e")
+    # log(itob(e))
+    # log("Txn.Sender")
+    # log(Txn.Sender)
+    # if Txn.Sender == bidder:
+    #     log("Txn.Sender == bidder")
+    # else:
+    #     log("Txn.Sender != bidder")
+    # end
+
+    assert(Txn.Sender == bidder)
+
+    # bidder_fairmarket_address
+    _, e = get_next_token(box_contents, e+1)
+
+    # currency_id
+    bytes currency_id_bytes
+    currency_id_bytes, e = get_next_token(box_contents, e+1)
+    int currency_id = btoi(currency_id_bytes)
+    log("currency_id_bytes")
+    log(currency_id_bytes)
+    # exit(1)
+
+    # currency_quantity
+    bytes currency_quantity_bytes
+    currency_quantity_bytes, e = get_next_token(box_contents, e+1)
+    int currency_quantity = btoi(currency_quantity_bytes)
+    log("currency_quantity_bytes")
+    log(currency_quantity_bytes)
+    # exit(1)
+
+    # check
+    # assert(Txn.Sender == bidder)
+
+    inner_txn:
+        TypeEnum: Axfer
+        Sender: Global.CurrentApplicationAddress
+        AssetReceiver: bidder
+        AssetAmount: currency_quantity
+        XferAsset: currency_id
+        Fee: 0
+    end
+
+    _ = box_del(box_name)
+
     exit(1)
 end
+
 block add_reputation:
     exit(1)
 end
@@ -284,6 +349,29 @@ block withdraw:
 end
 block add_data:
     exit(1)
+end
+
+func get_next_token(content: bytes, s: int) bytes, int:
+    log("get_next_token")
+    int e = len(content) - 1
+    # log("s")
+    # log(itob(s))
+    # log("e")
+    # log(itob(e))
+    for i in s:e:
+        bytes c = substring3(content, i, i+1)
+        # log("i")
+        # log(itob(i))
+        # log("c")
+        # log(c)
+        if c == ".":
+            # log("good")
+            # log(itob(i))
+            return substring3(content, s, i), i
+        end
+    end
+    # log("no good")
+    return substring3(content, s, e), e
 end
 
 # func abi_return_int(result):

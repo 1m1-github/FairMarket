@@ -487,7 +487,7 @@ create_bid:
   pushbytes "."
   concat
   store 8 // box_content
-  // bytes fairmarket_address = Txn.ApplicationArgs[2]
+  // bytes bidder_fairmarket_address = Txn.ApplicationArgs[2]
   // box_content = concat(box_content, Txn.ApplicationArgs[2])
   load 8 // box_content
   txna ApplicationArgs 2
@@ -584,16 +584,11 @@ create_bid:
   len
   box_create
   store 11 // box_existed
-  // if box_existed == 0:
-    load 11 // box_existed
-    pushint 0
-    ==
-    bz l4_end
-    // then:
-      // exit(0)
-      pushint 0
-      return
-    l4_end: // end
+  // assert(box_existed == 1)
+  load 11 // box_existed
+  pushint 1
+  ==
+  assert
   // box_replace(Txn.ApplicationArgs[3], 0, box_content)
   txna ApplicationArgs 3
   pushint 0
@@ -607,9 +602,154 @@ create_bid:
 
 // block cancel_bid
 cancel_bid:
+  
+  // bytes box_name = Txn.ApplicationArgs[1] [slot 1]
+  txna ApplicationArgs 1
+  store 1 // box_name
+  // int box_exists [slot 2]
+  // bytes box_contents [slot 3]
+  // box_exists, box_contents = box_get(box_name)
+  load 1 // box_name
+  box_get
+  store 2 // box_exists
+  store 3 // box_contents
+  // assert(box_exists == 1)
+  load 2 // box_exists
+  pushint 1
+  ==
+  assert
+  
+  // int e [slot 4]
+  // parent_bid
+  // _, e = get_next_token(box_contents, 0)
+  load 3 // box_contents
+  pushint 0
+  callsub __func__get_next_token
+  pop // discarding value for _
+  store 4 // e
+  // app_global_put("e1", itob(e))
+  // log("parent_bid")
+  // log(itob(e))
+  
+  // bidder
+  // bytes bidder [slot 5]
+  // bidder, e = get_next_token(box_contents, e+1)
+  load 3 // box_contents
+  load 4 // e
+  pushint 1
+  +
+  callsub __func__get_next_token
+  store 5 // bidder
+  store 4 // e
+  // app_global_put("d", bidder)
+  // app_global_put("e2", itob(e))
+  // log("bidder")
+  // log(bidder)
+  // log("e")
+  // log(itob(e))
+  // log("Txn.Sender")
+  // log(Txn.Sender)
+  // if Txn.Sender == bidder:
+  //     log("Txn.Sender == bidder")
+  // else:
+  //     log("Txn.Sender != bidder")
+  // end
+  
+  // assert(Txn.Sender == bidder)
+  txn Sender
+  load 5 // bidder
+  ==
+  assert
+  
+  // bidder_fairmarket_address
+  // _, e = get_next_token(box_contents, e+1)
+  load 3 // box_contents
+  load 4 // e
+  pushint 1
+  +
+  callsub __func__get_next_token
+  pop // discarding value for _
+  store 4 // e
+  
+  // currency_id
+  // bytes currency_id_bytes [slot 6]
+  // currency_id_bytes, e = get_next_token(box_contents, e+1)
+  load 3 // box_contents
+  load 4 // e
+  pushint 1
+  +
+  callsub __func__get_next_token
+  store 6 // currency_id_bytes
+  store 4 // e
+  // int currency_id = btoi(currency_id_bytes) [slot 7]
+  load 6 // currency_id_bytes
+  btoi
+  store 7 // currency_id
+  // log("currency_id_bytes")
+  pushbytes "currency_id_bytes"
+  log
+  // log(currency_id_bytes)
+  load 6 // currency_id_bytes
+  log
+  // exit(1)
+  
+  // currency_quantity
+  // bytes currency_quantity_bytes [slot 8]
+  // currency_quantity_bytes, e = get_next_token(box_contents, e+1)
+  load 3 // box_contents
+  load 4 // e
+  pushint 1
+  +
+  callsub __func__get_next_token
+  store 8 // currency_quantity_bytes
+  store 4 // e
+  // int currency_quantity = btoi(currency_quantity_bytes) [slot 9]
+  load 8 // currency_quantity_bytes
+  btoi
+  store 9 // currency_quantity
+  // log("currency_quantity_bytes")
+  pushbytes "currency_quantity_bytes"
+  log
+  // log(currency_quantity_bytes)
+  load 8 // currency_quantity_bytes
+  log
+  // exit(1)
+  
+  // check
+  // assert(Txn.Sender == bidder)
+  
+  // inner_txn:
+  itxn_begin
+    // TypeEnum: Axfer
+    pushint 4 // Axfer
+    itxn_field TypeEnum
+    // Sender: Global.CurrentApplicationAddress
+    global CurrentApplicationAddress
+    itxn_field Sender
+    // AssetReceiver: bidder
+    load 5 // bidder
+    itxn_field AssetReceiver
+    // AssetAmount: currency_quantity
+    load 9 // currency_quantity
+    itxn_field AssetAmount
+    // XferAsset: currency_id
+    load 7 // currency_id
+    itxn_field XferAsset
+    // Fee: 0
+    pushint 0
+    itxn_field Fee
+  itxn_submit
+  // end inner_txn
+  
+  // _ = box_del(box_name)
+  load 1 // box_name
+  box_del
+  pop // discarding value for _
+  
   // exit(1)
   pushint 1
   return
+
 // block add_reputation
 add_reputation:
   // exit(1)
@@ -626,6 +766,74 @@ add_data:
   pushint 1
   return
 
+// func get_next_token(content: bytes, s: int) bytes, int:
+__func__get_next_token:
+store 12 // s
+store 13 // content
+// log("get_next_token")
+pushbytes "get_next_token"
+log
+// int e = len(content) - 1 [slot 14]
+load 13 // content
+len
+pushint 1
+-
+store 14 // e
+// log("s")
+// log(itob(s))
+// log("e")
+// log(itob(e))
+// for i in s:e:
+  load 12 // s
+  store 15 // i
+  l4_for:
+  load 15 // i
+  load 14 // e
+  ==
+  bnz l4_end
+  // bytes c = substring3(content, i, i+1) [slot 16]
+  load 13 // content
+  load 15 // i
+  load 15 // i
+  pushint 1
+  +
+  substring3
+  store 16 // c
+  // log("i")
+  // log(itob(i))
+  // log("c")
+  // log(c)
+  // if c == ".":
+    load 16 // c
+    pushbytes "."
+    ==
+    bz l5_end
+    // then:
+      // log("good")
+      // log(itob(i))
+      // return substring3(content, s, i), i
+      load 15 // i
+      load 13 // content
+      load 12 // s
+      load 15 // i
+      substring3
+      retsub
+    l5_end: // end
+  load 15 // i
+  pushint 1
+  +
+  store 15 // i
+  b l4_for
+  l4_end: // end
+// log("no good")
+// return substring3(content, s, e), e
+load 14 // e
+load 13 // content
+load 12 // s
+load 14 // e
+substring3
+retsub
+
 // func abi_return_int(result):
 //     # log(concat("\x15\x1f\x7c\x75", result))
 //     # log(result)
@@ -639,10 +847,10 @@ add_data:
 
 // func abi_return(result: bytes):
 __func__abi_return:
-store 12 // result
+store 17 // result
 // log(concat("\x15\x1f\x7c\x75", result))
 // log(result)
-load 12 // result
+load 17 // result
 log
 // return
 retsub
@@ -659,9 +867,9 @@ retsub
 
 // func abi_encode_uint64(value: int) bytes:
 __func__abi_encode_uint64:
-store 13 // value
+store 18 // value
 // return itob(value)
-load 13 // value
+load 18 // value
 itob
 retsub
 
@@ -688,137 +896,137 @@ retsub
 // TODO assert input sizes, choose m appropriately
 // func calc_type(asset_amount: int, fx: bytes) bytes:
 __func__calc_type:
-store 14 // fx
-store 15 // asset_amount
+store 19 // fx
+store 20 // asset_amount
 
 // if fx == "SUBJECTIVE":
-  load 14 // fx
+  load 19 // fx
   pushbytes "SUBJECTIVE"
   ==
-  bz l5_end
+  bz l6_end
   // then:
     // return "S"
     pushbytes "S"
     retsub
-  l5_end: // end
+  l6_end: // end
 
-// int m = 10000 [slot 16]
+// int m = 10000 [slot 21]
 pushint 10000
-store 16 // m
+store 21 // m
 
-// int fx_n = extract_uint64(fx, 0) [slot 17]
-load 14 // fx
+// int fx_n = extract_uint64(fx, 0) [slot 22]
+load 19 // fx
 pushint 0
 extract_uint64
-store 17 // fx_n
-// int fx_d = extract_uint64(fx, 8) [slot 18]
-load 14 // fx
+store 22 // fx_n
+// int fx_d = extract_uint64(fx, 8) [slot 23]
+load 19 // fx
 pushint 8
 extract_uint64
-store 18 // fx_d
+store 23 // fx_d
 
-// bytes aa = app_global_get("a") [slot 19]
+// bytes aa = app_global_get("a") [slot 24]
 pushbytes "a"
 app_global_get
-store 19 // aa
-// int min = btoi(substring(56, 64, aa)) [slot 20]
-load 19 // aa
+store 24 // aa
+// int min = btoi(substring(56, 64, aa)) [slot 25]
+load 24 // aa
 substring 56 64
 btoi
-store 20 // min
-// int min_precision_n = btoi(substring(64, 72, aa)) [slot 21]
-load 19 // aa
+store 25 // min
+// int min_precision_n = btoi(substring(64, 72, aa)) [slot 26]
+load 24 // aa
 substring 64 72
 btoi
-store 21 // min_precision_n
-// int min_precision_d = btoi(substring(72, 80, aa)) [slot 22]
-load 19 // aa
+store 26 // min_precision_n
+// int min_precision_d = btoi(substring(72, 80, aa)) [slot 27]
+load 24 // aa
 substring 72 80
 btoi
-store 22 // min_precision_d
+store 27 // min_precision_d
 
-// int currency_quantity_after_fx = (m * (asset_amount * fx_n)) / fx_d [slot 23]
-load 16 // m
-load 15 // asset_amount
-load 17 // fx_n
+// int currency_quantity_after_fx = (m * (asset_amount * fx_n)) / fx_d [slot 28]
+load 21 // m
+load 20 // asset_amount
+load 22 // fx_n
 *
 *
-load 18 // fx_d
+load 23 // fx_d
 /
-store 23 // currency_quantity_after_fx
-// int chrony_upper_bound = min * (m + ((m * min_precision_n) / min_precision_d)) [slot 24]
-load 20 // min
-load 16 // m
-load 16 // m
-load 21 // min_precision_n
+store 28 // currency_quantity_after_fx
+// int chrony_upper_bound = min * (m + ((m * min_precision_n) / min_precision_d)) [slot 29]
+load 25 // min
+load 21 // m
+load 21 // m
+load 26 // min_precision_n
 *
-load 22 // min_precision_d
+load 27 // min_precision_d
 /
 +
 *
-store 24 // chrony_upper_bound
-// int chrony_lower_bound = min * (m - ((m * min_precision_n) / min_precision_d)) [slot 25]
-load 20 // min
-load 16 // m
-load 16 // m
-load 21 // min_precision_n
+store 29 // chrony_upper_bound
+// int chrony_lower_bound = min * (m - ((m * min_precision_n) / min_precision_d)) [slot 30]
+load 25 // min
+load 21 // m
+load 21 // m
+load 26 // min_precision_n
 *
-load 22 // min_precision_d
+load 27 // min_precision_d
 /
 -
 *
-store 25 // chrony_lower_bound
+store 30 // chrony_lower_bound
 
 // if currency_quantity_after_fx == 0:
-  load 23 // currency_quantity_after_fx
+  load 28 // currency_quantity_after_fx
   pushint 0
   ==
-  bz l6_elif_0
+  bz l7_elif_0
   // then:
     // if chrony_lower_bound == 0:
-      load 25 // chrony_lower_bound
+      load 30 // chrony_lower_bound
       pushint 0
       ==
-      bz l7_else
+      bz l8_else
       // then:
         // return "L"
         pushbytes "L"
         retsub
-      b l7_end
-      l7_else:
+      b l8_end
+      l8_else:
       // else:
         // 0 lurker with 0<min is a spammer
         // exit(0)
         pushint 0
         return
-      l7_end: // end
-  b l6_end
-  l6_elif_0:
+      l8_end: // end
+  b l7_end
+  l7_elif_0:
   // elif currency_quantity_after_fx < chrony_lower_bound:
-  load 23 // currency_quantity_after_fx
-  load 25 // chrony_lower_bound
+  load 28 // currency_quantity_after_fx
+  load 30 // chrony_lower_bound
   <
-  bz l6_elif_1
+  bz l7_elif_1
     // return "L"
     pushbytes "L"
     retsub
-  b l6_end
-  l6_elif_1:
+  b l7_end
+  l7_elif_1:
   // elif chrony_upper_bound < currency_quantity_after_fx:
-  load 24 // chrony_upper_bound
-  load 23 // currency_quantity_after_fx
+  load 29 // chrony_upper_bound
+  load 28 // currency_quantity_after_fx
   <
-  bz l6_else
+  bz l7_else
     // return "H"
     pushbytes "H"
     retsub
-  b l6_end
-  l6_else:
+  b l7_end
+  l7_else:
   // else:
     // return "C"
     pushbytes "C"
     retsub
-  l6_end: // end
+  l7_end: // end
 
 // should never reach here
 // exit(0)

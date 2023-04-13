@@ -57,14 +57,19 @@ export AMOUNT=1
 export ASSET_ID=10458941
 export LP_APP=148607000
 export LP_ACCOUNT=UDFWT5DW3X5RZQYXKQEMZ6MRWAEYHWYP7YUAPZKPW6WJK3JH3OZPL7PO2Y
-export PARENT_BID="str:"
+export PARENT_BID="str:27ae41e4649b934ca495991b7852b855"
 export BIDDER_FAIRMARKET_APP="int:0"
-export BID_ID="str:a"
-goal app call --from $BIDDER --app-id $FX_APP --foreign-app $LP_APP --foreign-asset $ASSET_ID --app-account $LP_ACCOUNT --note "2\n" --out $TXNS_DIR/FX.txn
-goal clerk send --from $BIDDER --to $SELLER_FAIRMARKET_ACCOUNT --amount 239700 --note "5\n" --out $TXNS_DIR/algo_send.txn
-goal app call --from $BIDDER --app-id $SELLER_FAIRMARKET_APP --foreign-asset $ASSET_ID --app-arg "str:create_bid" --app-arg $PARENT_BID --app-arg $BIDDER_FAIRMARKET_APP --app-arg $BID_ID --box $BID_ID --note "3\n" --fee 300000 --out $TXNS_DIR/app_call.txn
-goal asset send --from $BIDDER --to $SELLER_FAIRMARKET_ACCOUNT --amount $AMOUNT --assetid $ASSET_ID --note "1\n" --out $TXNS_DIR/asset_send.txn
-goal app call --from $BIDDER --app-id $SELLER_FAIRMARKET_APP --app-arg "str:add_data" --note "4\n" --out $TXNS_DIR/note_extra_1.txn
+export BID_ID="str:7c34bfe6e537accbe6d4827144546f3c"
+export NOTE="hellohellohellohellohello"
+export BLOCK=29115361
+# BID_ID = hash($BIDDER$NOTE$BLOCK)
+tealish compile $TEALISH_DIR/$APPROVAL_FILE_NAME.tl
+goal app update --from=$SELLER --app-id=$SELLER_FAIRMARKET_APP --approval-prog $TEAL_DIR/$APPROVAL_FILE_NAME.teal --clear-prog $TEAL_DIR/$CLEAR_FILE_NAME.teal
+goal app call --from $BIDDER --app-id $FX_APP --foreign-app $LP_APP --foreign-asset $ASSET_ID --app-account $LP_ACCOUNT --note $NOTE --out $TXNS_DIR/FX.txn
+goal clerk send --from $BIDDER --to $SELLER_FAIRMARKET_ACCOUNT --amount 239700 --note $NOTE --out $TXNS_DIR/algo_send.txn
+goal app call --from $BIDDER --app-id $SELLER_FAIRMARKET_APP --foreign-asset $ASSET_ID --app-arg "str:create_bid" --app-arg $PARENT_BID --app-arg $BIDDER_FAIRMARKET_APP --app-arg $BID_ID --box $BID_ID --note $NOTE --fee 1000 --out $TXNS_DIR/app_call.txn
+goal asset send --from $BIDDER --to $SELLER_FAIRMARKET_ACCOUNT --amount $AMOUNT --assetid $ASSET_ID --note $NOTE --out $TXNS_DIR/asset_send.txn
+goal app call --from $BIDDER --app-id $SELLER_FAIRMARKET_APP --app-arg "str:add_data" --note $NOTE --out $TXNS_DIR/note_extra_1.txn
 cat $TXNS_DIR/FX.txn $TXNS_DIR/algo_send.txn $TXNS_DIR/app_call.txn $TXNS_DIR/asset_send.txn $TXNS_DIR/note_extra_1.txn > $TXNS_DIR/combined.txn
 goal clerk group --infile $TXNS_DIR/combined.txn --outfile $TXNS_DIR/create_bid.txn
 goal clerk sign --infile $TXNS_DIR/create_bid.txn --outfile $TXNS_DIR/create_bid.stxn

@@ -14,6 +14,7 @@
 # description [bytes] [owner can change]
 # encryption public key [256 bytes = 3 vars]
 
+# size=32+9*8=104
 struct Params:
     owner: bytes[32]
     chrony_importance: int
@@ -31,15 +32,19 @@ struct Params:
     version: int
 end
 
-# box is a bid: (each box element is prefixed with its length)
-# txid [bytes] [key]
-# parent bid [bytes]
-# bidder address [bytes]
-# fairmarket address [bytes]
-# currency (id, quantity)
-# fx (bytes xor 2 ints)
-# type (chrony/highroller/subjective/lurker)
-# data (bytes)
+# size=2*32+5*8+1=105
+struct BidWithoutNote:
+    parent: bytes[32]
+    owner: bytes[32]
+    fairmarket: int
+    currency_id: int
+    currency_quantity: int
+    fx_n: int
+    fx_d: int
+    type: byte[1]
+end
+
+const int FX_APP = 178969021
 
 # bid list = list of txids [boxes]
 
@@ -74,6 +79,9 @@ end
 if Txn.ApplicationID == 0:
     # Handle Create App
 
+    for i in 0:8:
+        assert(len(Txn.ApplicationArgs[i]) == 8)
+    end
     bytes a = Txn.Sender
     a = concat(a, Txn.ApplicationArgs[0])
     a = concat(a, Txn.ApplicationArgs[1])
@@ -141,70 +149,6 @@ block main:
         "withdraw": withdraw
         "add_data": add_data
     end
-
-    # block add:
-    #     # Add 2 integers
-    #     int x = btoi(Txn.ApplicationArgs[1])
-    #     int y = btoi(Txn.ApplicationArgs[2])
-    #     int result = x + y
-    #     abi_return(abi_encode_uint64(result))
-    #     exit(1)
-    # end
-
-    # block mulw:
-    #     # Multiply 2 integers, returing a uint128
-    #     bytes x = Txn.ApplicationArgs[1]
-    #     bytes y = Txn.ApplicationArgs[2]
-    #     bytes result = x b* y
-    #     abi_return(abi_encode_uint128(result))
-    #     exit(1)
-    # end
-
-
-    # block hello:
-    #     # Return a greeting
-    #     bytes name = abi_decode_string(Txn.ApplicationArgs[1])
-    #     bytes result = concat("Hello ", name)
-    #     abi_return(abi_encode_string(result))
-    #     exit(1)
-    # end
-
-    # block send:
-    #     # Send some Algo to the given address
-    #     bytes address = Txn.ApplicationArgs[1]
-    #     inner_txn:
-    #         TypeEnum: Pay
-    #         Receiver: address
-    #         Amount: 10000000
-    #         Fee: 0
-    #     end
-    #     exit(1)
-    # end
-
-    # block store_data:
-    #     # Store some fixed size data in a box with the specified key
-    #     bytes key = Txn.ApplicationArgs[1]
-    #     bytes data = Txn.ApplicationArgs[2]
-    #     box_put(key, data)
-    #     exit(1)
-    # end
-
-    # block store_tuple:
-    #     # Store some structured data in a box with the specified key
-    #     bytes key = Txn.ApplicationArgs[1]
-    #     # Item data = Txn.ApplicationArgs[2]
-    #     # make some assertion about the data for the fun of it
-    #     # assert(data.owner == Txn.Sender)
-    #     # box_put(key, data)
-    #     exit(1)
-    # end
-
-    # block balance:
-    #     # Return balance of the specified account
-    #     int result = balance(Txn.Accounts[btoi(Txn.ApplicationArgs[1])])
-    #     abi_return(abi_encode_uint64(result))
-    #     exit(1)
-    # end
 end
 
 block update_params:
@@ -218,73 +162,41 @@ block create_bid:
     int algo_send_ix = 1
     int app_call_ix = 2
     int asset_send_ix = 3
-    int e = Global.GroupSize-1
+    # int e = Global.GroupSize-1
 
-    # check
-    const int FX_APP = 178969021
-    assert(Gtxn[asset_send_ix].TypeEnum == Axfer)
-    assert(Gtxn[asset_send_ix].AssetReceiver == Global.CurrentApplicationAddress)
-    assert(Gtxn[fx_call_ix].TypeEnum == Appl)
-    assert(Gtxn[fx_call_ix].Sender == Gtxn[asset_send_ix].Sender)
-    assert(Gtxn[fx_call_ix].ApplicationID == FX_APP)
-    assert(Gtxn[asset_send_ix].XferAsset == Gtxn[fx_call_ix].Assets[0])
-    assert(Txn.GroupIndex == app_call_ix)
-    assert(Txn.Sender == Gtxn[asset_send_ix].Sender)
-    assert(Gtxn[algo_send_ix].TypeEnum == Pay)
-    assert(Gtxn[algo_send_ix].Sender == Gtxn[asset_send_ix].Sender)
-    assert(Gtxn[algo_send_ix].Receiver == Global.CurrentApplicationAddress)
-    for i in 4:e:
-        assert(Gtxn[i].TypeEnum == Appl)
-    end
-
-    # opt-in
-    int asset_id = Gtxn[asset_send_ix].XferAsset
-    int is_opted_in
-    is_opted_in, _ = asset_holding_get(AssetBalance, Global.CurrentApplicationAddress, asset_id)
-    if is_opted_in == 0:
-        inner_txn:
-            TypeEnum: Axfer
-            Sender: Global.CurrentApplicationAddress
-            AssetReceiver: Global.CurrentApplicationAddress
-            AssetAmount: 0
-            XferAsset: asset_id
-            Fee: 0
-        end
-    end
+    check_create_bid(asset_send_ix, fx_call_ix, app_call_ix, algo_send_ix)
+    
+    opt_in(Gtxn[asset_send_ix].XferAsset)
 
     # box_content
-    bytes box_content = ""
-    # bytes parent_bid = Txn.ApplicationArgs[1]
-    box_content = concat(box_content, Txn.ApplicationArgs[1])
-    box_content = concat(box_content, ".")
-    # bytes bidder = Txn.Sender
+    # parent
+    assert(len(Txn.ApplicationArgs[1]) == 32)
+    bytes box_content = Txn.ApplicationArgs[1]
+    # owner
     box_content = concat(box_content, Txn.Sender)
-    box_content = concat(box_content, ".")
-    # bytes bidder_fairmarket_address = Txn.ApplicationArgs[2]
+    # fairmarket
+    assert(len(Txn.ApplicationArgs[2]) == 8)
     box_content = concat(box_content, Txn.ApplicationArgs[2])
-    box_content = concat(box_content, ".")
-    # bytes currency_id = itob(Gtxn[asset_send_ix].XferAsset)
+    # currency_id
     box_content = concat(box_content, itob(Gtxn[asset_send_ix].XferAsset))
-    box_content = concat(box_content, ".")
-    # bytes currency_quantity = itob(Gtxn[asset_send_ix].AssetAmount)
+    # currency_quantity
     box_content = concat(box_content, itob(Gtxn[asset_send_ix].AssetAmount))
-    box_content = concat(box_content, ".")
     bytes fx = Gtxn[fx_call_ix].LastLog
     box_content = concat(box_content, fx)
-    box_content = concat(box_content, ".")
-
     bytes type = calc_type(Gtxn[asset_send_ix].AssetAmount, fx)
     box_content = concat(box_content, type)
-    box_content = concat(box_content, ".")
+    BidWithoutNote bidWithoutNote = box_content
 
-    # int e = Global.GroupSize-1
+    int e = Global.GroupSize-1
     for i in 0:e:
         box_content = concat(box_content, Gtxn[i].Note)
     end
 
-    int box_existed = box_create(Txn.ApplicationArgs[3], len(box_content))
+    bytes box_name = Txn.ApplicationArgs[3]
+    assert(len(box_name) == 32)
+    int box_existed = box_create(box_name, len(box_content))
     assert(box_existed == 1)
-    box_replace(Txn.ApplicationArgs[3], 0, box_content)
+    box_replace(box_name, 0, box_content)
 
     exit(1)
 
@@ -298,60 +210,16 @@ block cancel_bid:
     box_exists, box_contents = box_get(box_name)
     assert(box_exists == 1)
 
-    int e
-    # parent_bid
-    _, e = get_next_token(box_contents, 0)
-    # app_global_put("e1", itob(e))
-    # log("parent_bid")
-    # log(itob(e))
+    BidWithoutNote bid = substring(0, 105, box_contents)
 
-    # bidder
-    bytes bidder
-    bidder, e = get_next_token(box_contents, e+1)
-    # app_global_put("d", bidder)
-    # app_global_put("e2", itob(e))
-    # log("bidder")
-    # log(bidder)
-    # log("e")
-    # log(itob(e))
-    # log("Txn.Sender")
-    # log(Txn.Sender)
-    # if Txn.Sender == bidder:
-    #     log("Txn.Sender == bidder")
-    # else:
-    #     log("Txn.Sender != bidder")
-    # end
-
-    assert(Txn.Sender == bidder)
-
-    # bidder_fairmarket_address
-    _, e = get_next_token(box_contents, e+1)
-
-    # currency_id
-    bytes currency_id_bytes
-    currency_id_bytes, e = get_next_token(box_contents, e+1)
-    int currency_id = btoi(currency_id_bytes)
-    log("currency_id_bytes")
-    log(currency_id_bytes)
-    # exit(1)
-
-    # currency_quantity
-    bytes currency_quantity_bytes
-    currency_quantity_bytes, e = get_next_token(box_contents, e+1)
-    int currency_quantity = btoi(currency_quantity_bytes)
-    log("currency_quantity_bytes")
-    log(currency_quantity_bytes)
-    # exit(1)
-
-    # check
-    # assert(Txn.Sender == bidder)
+    assert(Txn.Sender == bid.owner)
 
     inner_txn:
         TypeEnum: Axfer
         Sender: Global.CurrentApplicationAddress
-        AssetReceiver: bidder
-        AssetAmount: currency_quantity
-        XferAsset: currency_id
+        AssetReceiver: bid.owner
+        AssetAmount: bid.currency_quantity
+        XferAsset: bid.currency_id
         Fee: 0
     end
 
@@ -370,79 +238,15 @@ block add_data:
     exit(1)
 end
 
-func get_next_token(content: bytes, s: int) bytes, int:
-    log("get_next_token")
-    int e = len(content) - 1
-    # log("s")
-    # log(itob(s))
-    # log("e")
-    # log(itob(e))
-    for i in s:e:
-        bytes c = substring3(content, i, i+1)
-        # log("i")
-        # log(itob(i))
-        # log("c")
-        # log(c)
-        if c == ".":
-            # log("good")
-            # log(itob(i))
-            return substring3(content, s, i), i
-        end
-    end
-    # log("no good")
-    return substring3(content, s, e), e
-end
-
-# func abi_return_int(result):
-#     # log(concat("\x15\x1f\x7c\x75", result))
-#     # log(result)
-#     int r = result
-#     teal:
-#         store 0
-#     end
-#     log(itob(result0))
-#     return
-# end
-
 func abi_return(result: bytes):
     # log(concat("\x15\x1f\x7c\x75", result))
     log(result)
     return
 end
 
-# func abi_decode_string(value: bytes) bytes:
-#     # return the content portion of the string, skipping the first 2 bytes which encode the length
-#     return extract(2, 0, value)
-# end
-
-# func abi_encode_string(value: bytes) bytes:
-#     # return the bytestring with a uint16 prefix denoting the length
-#     return concat(extract(6, 2, itob(len(value))), value)
-# end
-
 func abi_encode_uint64(value: int) bytes:
     return itob(value)
 end
-
-# func abi_encode_uint32(value: int) bytes:
-#     # return the last 4 bytes
-#     return extract(4, 4, itob(value))
-# end
-
-# func abi_encode_uint16(value: int) bytes:
-#     # return the last 2 bytes
-#     return extract(6, 2, itob(value))
-# end
-
-# func abi_encode_uint8(value: int) bytes:
-#     # return the last 1 byte
-#     return extract(7, 1, itob(value))
-# end
-
-# func abi_encode_uint128(value: bytes) bytes:
-#     # return 16 bytes with zero padding
-#     return bzero(16) b| value
-# end
 
 # TODO assert input sizes, choose m appropriately
 func calc_type(asset_amount: int, fx: bytes) bytes:
@@ -480,4 +284,39 @@ func calc_type(asset_amount: int, fx: bytes) bytes:
     # should never reach here
     exit(0)
     return "X"
+end
+
+func opt_in(asset_id: int):
+    int is_opted_in
+    is_opted_in, _ = asset_holding_get(AssetBalance, Global.CurrentApplicationAddress, asset_id)
+    if is_opted_in == 0:
+        inner_txn:
+            TypeEnum: Axfer
+            Sender: Global.CurrentApplicationAddress
+            AssetReceiver: Global.CurrentApplicationAddress
+            AssetAmount: 0
+            XferAsset: asset_id
+            Fee: 0
+        end
+    end
+    return
+end
+
+func check_create_bid(asset_send_ix: int, fx_call_ix: int, app_call_ix: int, algo_send_ix: int):
+    assert(Gtxn[asset_send_ix].TypeEnum == Axfer)
+    assert(Gtxn[asset_send_ix].AssetReceiver == Global.CurrentApplicationAddress)
+    assert(Gtxn[fx_call_ix].TypeEnum == Appl)
+    assert(Gtxn[fx_call_ix].Sender == Gtxn[asset_send_ix].Sender)
+    assert(Gtxn[fx_call_ix].ApplicationID == FX_APP)
+    assert(Gtxn[asset_send_ix].XferAsset == Gtxn[fx_call_ix].Assets[0])
+    assert(Txn.GroupIndex == app_call_ix)
+    assert(Txn.Sender == Gtxn[asset_send_ix].Sender)
+    assert(Gtxn[algo_send_ix].TypeEnum == Pay)
+    assert(Gtxn[algo_send_ix].Sender == Gtxn[asset_send_ix].Sender)
+    assert(Gtxn[algo_send_ix].Receiver == Global.CurrentApplicationAddress)
+    int e = Global.GroupSize - 1
+    for i in 4:e:
+        assert(Gtxn[i].TypeEnum == Appl)
+    end
+    return
 end

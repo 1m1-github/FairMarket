@@ -14,6 +14,23 @@
 # description [bytes] [owner can change]
 # encryption public key [256 bytes = 3 vars]
 
+struct Params:
+    owner: bytes[32]
+    chrony_importance: int
+    highroller_importance: int
+    subjective_importance: int
+    min: int
+    # min_precision_n = numerator
+    min_precision_n: int
+    # min_precision_d = denominator
+    min_precision_d: int
+    # reputation_p = positive
+    reputation_p: int
+    # reputation_n = negative
+    reputation_n: int
+    version: int
+end
+
 # box is a bid: (each box element is prefixed with its length)
 # txid [bytes] [key]
 # parent bid [bytes]
@@ -51,6 +68,8 @@
 
 # withdraw
 # if amount < locked via bids
+
+
 
 if Txn.ApplicationID == 0:
     # Handle Create App
@@ -437,14 +456,11 @@ func calc_type(asset_amount: int, fx: bytes) bytes:
     int fx_n = extract_uint64(fx, 0)
     int fx_d = extract_uint64(fx, 8)
 
-    bytes aa = app_global_get("a")
-    int min = btoi(substring(56, 64, aa))
-    int min_precision_n = btoi(substring(64, 72, aa))
-    int min_precision_d = btoi(substring(72, 80, aa))
+    Params p = app_global_get("a")
     
     int currency_quantity_after_fx = (m * (asset_amount * fx_n)) / fx_d
-    int chrony_upper_bound = min * (m + ((m * min_precision_n) / min_precision_d))
-    int chrony_lower_bound = min * (m - ((m * min_precision_n) / min_precision_d))
+    int chrony_upper_bound = p.min * (m + ((m * p.min_precision_n) / p.min_precision_d))
+    int chrony_lower_bound = p.min * (m - ((m * p.min_precision_n) / p.min_precision_d))
 
     if currency_quantity_after_fx == 0:
         if chrony_lower_bound == 0:

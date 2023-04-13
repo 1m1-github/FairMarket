@@ -14,6 +14,7 @@
 // description [bytes] [owner can change]
 // encryption public key [256 bytes = 3 vars]
 
+
 // box is a bid: (each box element is prefixed with its length)
 // txid [bytes] [key]
 // parent bid [bytes]
@@ -51,6 +52,8 @@
 
 // withdraw
 // if amount < locked via bids
+
+
 
 // if Txn.ApplicationID == 0:
   txn ApplicationID
@@ -108,6 +111,7 @@
     txna ApplicationArgs 8
     concat
     store 0 // a
+    // Params p = a
     // app_global_put("a", a)
     pushbytes "a"
     load 0 // a
@@ -925,27 +929,16 @@ pushint 8
 extract_uint64
 store 23 // fx_d
 
-// bytes aa = app_global_get("a") [slot 24]
+// Params p = app_global_get("a") [slot 24]
 pushbytes "a"
 app_global_get
-store 24 // aa
-// int min = btoi(substring(56, 64, aa)) [slot 25]
-load 24 // aa
-substring 56 64
-btoi
-store 25 // min
-// int min_precision_n = btoi(substring(64, 72, aa)) [slot 26]
-load 24 // aa
-substring 64 72
-btoi
-store 26 // min_precision_n
-// int min_precision_d = btoi(substring(72, 80, aa)) [slot 27]
-load 24 // aa
-substring 72 80
-btoi
-store 27 // min_precision_d
+store 24 // p
+// bytes aa = app_global_get("a")
+// int min = btoi(substring(56, 64, aa))
+// int min_precision_n = btoi(substring(64, 72, aa))
+// int min_precision_d = btoi(substring(72, 80, aa))
 
-// int currency_quantity_after_fx = (m * (asset_amount * fx_n)) / fx_d [slot 28]
+// int currency_quantity_after_fx = (m * (asset_amount * fx_n)) / fx_d [slot 25]
 load 21 // m
 load 20 // asset_amount
 load 22 // fx_n
@@ -953,38 +946,50 @@ load 22 // fx_n
 *
 load 23 // fx_d
 /
-store 28 // currency_quantity_after_fx
-// int chrony_upper_bound = min * (m + ((m * min_precision_n) / min_precision_d)) [slot 29]
-load 25 // min
+store 25 // currency_quantity_after_fx
+// int chrony_upper_bound = p.min * (m + ((m * p.min_precision_n) / p.min_precision_d)) [slot 26]
+load 24 // p
+pushint 56
+extract_uint64 // min
 load 21 // m
 load 21 // m
-load 26 // min_precision_n
+load 24 // p
+pushint 64
+extract_uint64 // min_precision_n
 *
-load 27 // min_precision_d
+load 24 // p
+pushint 72
+extract_uint64 // min_precision_d
 /
 +
 *
-store 29 // chrony_upper_bound
-// int chrony_lower_bound = min * (m - ((m * min_precision_n) / min_precision_d)) [slot 30]
-load 25 // min
+store 26 // chrony_upper_bound
+// int chrony_lower_bound = p.min * (m - ((m * p.min_precision_n) / p.min_precision_d)) [slot 27]
+load 24 // p
+pushint 56
+extract_uint64 // min
 load 21 // m
 load 21 // m
-load 26 // min_precision_n
+load 24 // p
+pushint 64
+extract_uint64 // min_precision_n
 *
-load 27 // min_precision_d
+load 24 // p
+pushint 72
+extract_uint64 // min_precision_d
 /
 -
 *
-store 30 // chrony_lower_bound
+store 27 // chrony_lower_bound
 
 // if currency_quantity_after_fx == 0:
-  load 28 // currency_quantity_after_fx
+  load 25 // currency_quantity_after_fx
   pushint 0
   ==
   bz l7_elif_0
   // then:
     // if chrony_lower_bound == 0:
-      load 30 // chrony_lower_bound
+      load 27 // chrony_lower_bound
       pushint 0
       ==
       bz l8_else
@@ -1003,8 +1008,8 @@ store 30 // chrony_lower_bound
   b l7_end
   l7_elif_0:
   // elif currency_quantity_after_fx < chrony_lower_bound:
-  load 28 // currency_quantity_after_fx
-  load 30 // chrony_lower_bound
+  load 25 // currency_quantity_after_fx
+  load 27 // chrony_lower_bound
   <
   bz l7_elif_1
     // return "L"
@@ -1013,8 +1018,8 @@ store 30 // chrony_lower_bound
   b l7_end
   l7_elif_1:
   // elif chrony_upper_bound < currency_quantity_after_fx:
-  load 29 // chrony_upper_bound
-  load 28 // currency_quantity_after_fx
+  load 26 // chrony_upper_bound
+  load 25 // currency_quantity_after_fx
   <
   bz l7_else
     // return "H"

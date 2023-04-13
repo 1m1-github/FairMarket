@@ -46,16 +46,11 @@ end
 
 const int FX_APP = 178969021
 
-# bid list = list of txids [boxes]
-
-# reputation list of bidd   ers [boxes]
-
 # api
 # create bid [bidder]
 # cancel bid [bidder]
 # trade [seller] = create bid [bidder]
-# add reputation [bidder]
-# withdraw [seller]
+# add reputation [bidder] TODO
 
 # create bid
 # if 0<min, do not allow 0 lurker
@@ -148,8 +143,6 @@ block main:
         "update_params": update_params
         "create_bid": create_bid
         "cancel_bid": cancel_bid
-        "add_reputation": add_reputation
-        "withdraw": withdraw
         "add_data": add_data
     end
 end
@@ -200,6 +193,8 @@ block create_bid:
     assert(box_existed == 1)
     box_replace(box_name, 0, box_content)
 
+
+
     exit(1)
 end
 
@@ -239,14 +234,6 @@ block cancel_bid:
 
     _ = box_del(box_name)
 
-    exit(1)
-end
-
-block add_reputation:
-    exit(1)
-end
-
-block withdraw:
     exit(1)
 end
 

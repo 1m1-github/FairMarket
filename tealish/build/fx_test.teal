@@ -1,0 +1,183 @@
+#pragma version 8
+// if Txn.ApplicationID == 0:
+  txn ApplicationID
+  pushint 0
+  ==
+  bz l0_end
+  // then:
+    // Handle Create App
+    // exit(1)
+    pushint 1
+    return
+  l0_end: // end
+
+// switch Txn.OnCompletion:
+txn OnCompletion
+pushint 0 // NoOp
+==
+bnz main
+txn OnCompletion
+pushint 1 // OptIn
+==
+bnz opt_in
+txn OnCompletion
+pushint 2 // CloseOut
+==
+bnz close_out
+txn OnCompletion
+pushint 4 // UpdateApplication
+==
+bnz update_app
+txn OnCompletion
+pushint 5 // DeleteApplication
+==
+bnz delete_app
+err // unexpected value
+
+// block opt_in
+opt_in:
+  // Disallow Opt In
+  // exit(0)
+  pushint 0
+  return
+
+// block close_out
+close_out:
+  // Disallow Closing Out
+  // exit(0)
+  pushint 0
+  return
+
+// block update_app
+update_app:
+  // Handle Update App
+  // Only allow the Creator to update the app
+  // assert(Txn.Sender == Global.CreatorAddress)
+  txn Sender
+  global CreatorAddress
+  ==
+  assert
+  // (for now)
+  // exit(1)
+  pushint 1
+  return
+
+// block delete_app
+delete_app:
+  // Handle Delete App
+  // Only allow the Creator to delete the app
+  // assert(Txn.Sender == Global.CreatorAddress)
+  txn Sender
+  global CreatorAddress
+  ==
+  assert
+  // (for now)
+  // exit(1)
+  pushint 1
+  return
+
+// block main
+main:
+  
+  // int fx_n = 3 [slot 0]
+  pushint 3
+  store 0 // fx_n
+  // int fx_d = 2 [slot 1]
+  pushint 2
+  store 1 // fx_d
+  // int asset_amount = 0 [slot 2]
+  pushint 0
+  store 2 // asset_amount
+  // int min = 0 [slot 3]
+  pushint 0
+  store 3 // min
+  // int min_precision_n = 1 [slot 4]
+  pushint 1
+  store 4 // min_precision_n
+  // int min_precision_d = 10 [slot 5]
+  pushint 10
+  store 5 // min_precision_d
+  
+  // int m = 10000 [slot 6]
+  pushint 10000
+  store 6 // m
+  
+  // int currency_quantity_after_fx = (m * (asset_amount * fx_n)) / fx_d [slot 7]
+  load 6 // m
+  load 2 // asset_amount
+  load 0 // fx_n
+  *
+  *
+  load 1 // fx_d
+  /
+  store 7 // currency_quantity_after_fx
+  // int chrony_upper_bound = min * (m + ((m * min_precision_n) / min_precision_d)) [slot 8]
+  load 3 // min
+  load 6 // m
+  load 6 // m
+  load 4 // min_precision_n
+  *
+  load 5 // min_precision_d
+  /
+  +
+  *
+  store 8 // chrony_upper_bound
+  // int chrony_lower_bound = min * (m - ((m * min_precision_n) / min_precision_d)) [slot 9]
+  load 3 // min
+  load 6 // m
+  load 6 // m
+  load 4 // min_precision_n
+  *
+  load 5 // min_precision_d
+  /
+  -
+  *
+  store 9 // chrony_lower_bound
+  
+  // if currency_quantity_after_fx < chrony_lower_bound:
+    load 7 // currency_quantity_after_fx
+    load 9 // chrony_lower_bound
+    <
+    bz l1_elif_0
+    // then:
+      // if min == 0:
+        load 3 // min
+        pushint 0
+        ==
+        bz l2_end
+        // then:
+          // app_global_put("x", "BADL")
+          pushbytes "x"
+          pushbytes "BADL"
+          app_global_put
+        l2_end: // end
+      // app_global_put("x", "L")
+      pushbytes "x"
+      pushbytes "L"
+      app_global_put
+    b l1_end
+    l1_elif_0:
+    // elif currency_quantity_after_fx < chrony_upper_bound:
+    load 7 // currency_quantity_after_fx
+    load 8 // chrony_upper_bound
+    <
+    bz l1_else
+      // log("C")
+      pushbytes "C"
+      log
+      // app_global_put("x", "C")
+      pushbytes "x"
+      pushbytes "C"
+      app_global_put
+    b l1_end
+    l1_else:
+    // else:
+      // app_global_put("x", "H")
+      pushbytes "x"
+      pushbytes "H"
+      app_global_put
+    l1_end: // end
+  
+  // exit(1)
+  pushint 1
+  return

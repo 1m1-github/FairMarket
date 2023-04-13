@@ -26,7 +26,7 @@
 
 // bid list = list of txids [boxes]
 
-// reputation list of bidders [boxes]
+// reputation list of bidd   ers [boxes]
 
 // api
 // create bid [bidder]
@@ -539,115 +539,12 @@ create_bid:
   concat
   store 8 // box_content
   
-  // bytes type = "S" [slot 10]
-  pushbytes "S"
+  // bytes type = calc_type(Gtxn[asset_send_ix].AssetAmount, fx) [slot 10]
+  load 4 // asset_send_ix
+  gtxns AssetAmount
+  load 9 // fx
+  callsub __func__calc_type
   store 10 // type
-  // if fx == "SUBJECTIVE":
-    load 9 // fx
-    pushbytes "SUBJECTIVE"
-    ==
-    bz l3_else
-    // then:
-      // type = "S"
-      pushbytes "S"
-      store 10 // type
-    b l3_end
-    l3_else:
-    // else:
-      // int fx_n = extract_uint64(fx, 0) [slot 11]
-      load 9 // fx
-      pushint 0
-      extract_uint64
-      store 11 // fx_n
-      // int fx_d = extract_uint64(fx, 8) [slot 12]
-      load 9 // fx
-      pushint 8
-      extract_uint64
-      store 12 // fx_d
-      // int currency_quantity_after_fx = (Gtxn[asset_send_ix].AssetAmount * fx_n) / fx_d [slot 13]
-      load 4 // asset_send_ix
-      gtxns AssetAmount
-      load 11 // fx_n
-      *
-      load 12 // fx_d
-      /
-      store 13 // currency_quantity_after_fx
-      
-      // bytes aa = app_global_get("a") [slot 14]
-      pushbytes "a"
-      app_global_get
-      store 14 // aa
-      // int min = btoi(substring(56, 64, aa)) [slot 15]
-      load 14 // aa
-      substring 56 64
-      btoi
-      store 15 // min
-      // int min_precision_n = btoi(substring(64, 72, aa)) [slot 16]
-      load 14 // aa
-      substring 64 72
-      btoi
-      store 16 // min_precision_n
-      // int min_precision_d = btoi(substring(72, 80, aa)) [slot 17]
-      load 14 // aa
-      substring 72 80
-      btoi
-      store 17 // min_precision_d
-      // int chrony_upper_bound = min * (1 + (min_precision_n / min_precision_d)) [slot 18]
-      load 15 // min
-      pushint 1
-      load 16 // min_precision_n
-      load 17 // min_precision_d
-      /
-      +
-      *
-      store 18 // chrony_upper_bound
-      // int chrony_lower_bound = min * (1 - (min_precision_n / min_precision_d)) [slot 19]
-      load 15 // min
-      pushint 1
-      load 16 // min_precision_n
-      load 17 // min_precision_d
-      /
-      -
-      *
-      store 19 // chrony_lower_bound
-      
-      // if currency_quantity_after_fx < chrony_lower_bound:
-        load 13 // currency_quantity_after_fx
-        load 19 // chrony_lower_bound
-        <
-        bz l4_elif_0
-        // then:
-          // if min == 0:
-            load 15 // min
-            pushint 0
-            ==
-            bz l5_end
-            // then:
-              // exit(0)
-              pushint 0
-              return
-            l5_end: // end
-          // type = "L"
-          pushbytes "L"
-          store 10 // type
-        b l4_end
-        l4_elif_0:
-        // elif currency_quantity_after_fx < chrony_upper_bound:
-        load 13 // currency_quantity_after_fx
-        load 18 // chrony_upper_bound
-        <
-        bz l4_else
-          // type = "C"
-          pushbytes "C"
-          store 10 // type
-        b l4_end
-        l4_else:
-        // else:
-          // type = "H"
-          pushbytes "H"
-          store 10 // type
-        l4_end: // end
-    l3_end: // end
   // box_content = concat(box_content, type)
   load 8 // box_content
   load 10 // type
@@ -662,41 +559,41 @@ create_bid:
   // int e = Global.GroupSize-1
   // for i in 0:e:
     pushint 0
-    store 20 // i
-    l6_for:
-    load 20 // i
+    store 11 // i
+    l3_for:
+    load 11 // i
     load 5 // e
     ==
-    bnz l6_end
+    bnz l3_end
     // box_content = concat(box_content, Gtxn[i].Note)
     load 8 // box_content
-    load 20 // i
+    load 11 // i
     gtxns Note
     concat
     store 8 // box_content
-    load 20 // i
+    load 11 // i
     pushint 1
     +
-    store 20 // i
-    b l6_for
-    l6_end: // end
+    store 11 // i
+    b l3_for
+    l3_end: // end
   
-  // int box_existed = box_create(Txn.ApplicationArgs[3], len(box_content)) [slot 20]
+  // int box_existed = box_create(Txn.ApplicationArgs[3], len(box_content)) [slot 11]
   txna ApplicationArgs 3
   load 8 // box_content
   len
   box_create
-  store 20 // box_existed
+  store 11 // box_existed
   // if box_existed == 0:
-    load 20 // box_existed
+    load 11 // box_existed
     pushint 0
     ==
-    bz l7_end
+    bz l4_end
     // then:
       // exit(0)
       pushint 0
       return
-    l7_end: // end
+    l4_end: // end
   // box_replace(Txn.ApplicationArgs[3], 0, box_content)
   txna ApplicationArgs 3
   pushint 0
@@ -742,10 +639,10 @@ add_data:
 
 // func abi_return(result: bytes):
 __func__abi_return:
-store 21 // result
+store 12 // result
 // log(concat("\x15\x1f\x7c\x75", result))
 // log(result)
-load 21 // result
+load 12 // result
 log
 // return
 retsub
@@ -762,9 +659,9 @@ retsub
 
 // func abi_encode_uint64(value: int) bytes:
 __func__abi_encode_uint64:
-store 22 // value
+store 13 // value
 // return itob(value)
-load 22 // value
+load 13 // value
 itob
 retsub
 
@@ -787,3 +684,146 @@ retsub
 //     # return 16 bytes with zero padding
 //     return bzero(16) b| value
 // end
+
+// TODO assert input sizes, choose m appropriately
+// func calc_type(asset_amount: int, fx: bytes) bytes:
+__func__calc_type:
+store 14 // fx
+store 15 // asset_amount
+
+// if fx == "SUBJECTIVE":
+  load 14 // fx
+  pushbytes "SUBJECTIVE"
+  ==
+  bz l5_end
+  // then:
+    // return "S"
+    pushbytes "S"
+    retsub
+  l5_end: // end
+
+// int m = 10000 [slot 16]
+pushint 10000
+store 16 // m
+
+// int fx_n = extract_uint64(fx, 0) [slot 17]
+load 14 // fx
+pushint 0
+extract_uint64
+store 17 // fx_n
+// int fx_d = extract_uint64(fx, 8) [slot 18]
+load 14 // fx
+pushint 8
+extract_uint64
+store 18 // fx_d
+
+// bytes aa = app_global_get("a") [slot 19]
+pushbytes "a"
+app_global_get
+store 19 // aa
+// int min = btoi(substring(56, 64, aa)) [slot 20]
+load 19 // aa
+substring 56 64
+btoi
+store 20 // min
+// int min_precision_n = btoi(substring(64, 72, aa)) [slot 21]
+load 19 // aa
+substring 64 72
+btoi
+store 21 // min_precision_n
+// int min_precision_d = btoi(substring(72, 80, aa)) [slot 22]
+load 19 // aa
+substring 72 80
+btoi
+store 22 // min_precision_d
+
+// int currency_quantity_after_fx = (m * (asset_amount * fx_n)) / fx_d [slot 23]
+load 16 // m
+load 15 // asset_amount
+load 17 // fx_n
+*
+*
+load 18 // fx_d
+/
+store 23 // currency_quantity_after_fx
+// int chrony_upper_bound = min * (m + ((m * min_precision_n) / min_precision_d)) [slot 24]
+load 20 // min
+load 16 // m
+load 16 // m
+load 21 // min_precision_n
+*
+load 22 // min_precision_d
+/
++
+*
+store 24 // chrony_upper_bound
+// int chrony_lower_bound = min * (m - ((m * min_precision_n) / min_precision_d)) [slot 25]
+load 20 // min
+load 16 // m
+load 16 // m
+load 21 // min_precision_n
+*
+load 22 // min_precision_d
+/
+-
+*
+store 25 // chrony_lower_bound
+
+// if currency_quantity_after_fx == 0:
+  load 23 // currency_quantity_after_fx
+  pushint 0
+  ==
+  bz l6_elif_0
+  // then:
+    // if chrony_lower_bound == 0:
+      load 25 // chrony_lower_bound
+      pushint 0
+      ==
+      bz l7_else
+      // then:
+        // return "L"
+        pushbytes "L"
+        retsub
+      b l7_end
+      l7_else:
+      // else:
+        // 0 lurker with 0<min is a spammer
+        // exit(0)
+        pushint 0
+        return
+      l7_end: // end
+  b l6_end
+  l6_elif_0:
+  // elif currency_quantity_after_fx < chrony_lower_bound:
+  load 23 // currency_quantity_after_fx
+  load 25 // chrony_lower_bound
+  <
+  bz l6_elif_1
+    // return "L"
+    pushbytes "L"
+    retsub
+  b l6_end
+  l6_elif_1:
+  // elif chrony_upper_bound < currency_quantity_after_fx:
+  load 24 // chrony_upper_bound
+  load 23 // currency_quantity_after_fx
+  <
+  bz l6_else
+    // return "H"
+    pushbytes "H"
+    retsub
+  b l6_end
+  l6_else:
+  // else:
+    // return "C"
+    pushbytes "C"
+    retsub
+  l6_end: // end
+
+// should never reach here
+// exit(0)
+pushint 0
+return
+// return "X"
+pushbytes "X"
+retsub

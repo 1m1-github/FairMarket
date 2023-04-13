@@ -26,7 +26,7 @@
 
 # bid list = list of txids [boxes]
 
-# reputation list of bidders [boxes]
+# reputation list of bidd   ers [boxes]
 
 # api
 # create bid [bidder]
@@ -254,32 +254,7 @@ block create_bid:
     box_content = concat(box_content, fx)
     box_content = concat(box_content, ".")
 
-    bytes type = "S"
-    if fx == "SUBJECTIVE":
-        type = "S"
-    else:
-        int fx_n = extract_uint64(fx, 0)
-        int fx_d = extract_uint64(fx, 8)
-        int currency_quantity_after_fx = (Gtxn[asset_send_ix].AssetAmount * fx_n) / fx_d
-
-        bytes aa = app_global_get("a")
-        int min = btoi(substring(56, 64, aa))
-        int min_precision_n = btoi(substring(64, 72, aa))
-        int min_precision_d = btoi(substring(72, 80, aa))
-        int chrony_upper_bound = min * (1 + (min_precision_n / min_precision_d))
-        int chrony_lower_bound = min * (1 - (min_precision_n / min_precision_d))
-
-        if currency_quantity_after_fx < chrony_lower_bound:
-            if min == 0:
-                exit(0)
-            end
-            type = "L"
-        elif currency_quantity_after_fx < chrony_upper_bound:
-            type = "C"
-        else:
-            type = "H"
-        end
-    end
+    bytes type = calc_type(Gtxn[asset_send_ix].AssetAmount, fx)
     box_content = concat(box_content, type)
     box_content = concat(box_content, ".")
 
@@ -361,3 +336,44 @@ end
 #     # return 16 bytes with zero padding
 #     return bzero(16) b| value
 # end
+
+# TODO assert input sizes, choose m appropriately
+func calc_type(asset_amount: int, fx: bytes) bytes:
+
+    if fx == "SUBJECTIVE":
+        return "S"
+    end
+
+    int m = 10000
+
+    int fx_n = extract_uint64(fx, 0)
+    int fx_d = extract_uint64(fx, 8)
+
+    bytes aa = app_global_get("a")
+    int min = btoi(substring(56, 64, aa))
+    int min_precision_n = btoi(substring(64, 72, aa))
+    int min_precision_d = btoi(substring(72, 80, aa))
+    
+    int currency_quantity_after_fx = (m * (asset_amount * fx_n)) / fx_d
+    int chrony_upper_bound = min * (m + ((m * min_precision_n) / min_precision_d))
+    int chrony_lower_bound = min * (m - ((m * min_precision_n) / min_precision_d))
+
+    if currency_quantity_after_fx == 0:
+        if chrony_lower_bound == 0:
+            return "L"
+        else:
+            # 0 lurker with 0<min is a spammer
+            exit(0)
+        end
+    elif currency_quantity_after_fx < chrony_lower_bound:
+        return "L"
+    elif chrony_upper_bound < currency_quantity_after_fx:
+        return "H"
+    else:
+        return "C"
+    end
+
+    # should never reach here
+    exit(0)
+    return "X"
+end

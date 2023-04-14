@@ -129,11 +129,10 @@ delete_app:
 
 // block main
 main:
+  
   // safety
-  // int e = Global.GroupSize-1 [slot 0]
+  // int e = Global.GroupSize [slot 0]
   global GroupSize
-  pushint 1
-  -
   store 0 // e
   // for i in 0:e:
     pushint 0
@@ -205,9 +204,8 @@ create_bid:
   
   // box_content
   // A, b = B
-  // bytes b = extract(0, 32, Txn.Note) [slot 4]
-  txn Note
-  extract 0 32
+  // bytes b = Txn.ApplicationArgs[1] [slot 4]
+  txna ApplicationArgs 1
   store 4 // b
   // bytes bid = concat(Txn.Sender, b) [slot 5]
   txn Sender
@@ -237,9 +235,14 @@ create_bid:
   concat
   store 5 // bid
   // fx
-  // bytes fx = Gtxn[fx_call_ix].LastLog [slot 8]
-  load 0 // fx_call_ix
-  gtxns LastLog
+  // bytes fx = Gtxn[fx_call_ix].LastLog
+  // DEBUG
+  // bytes fx = concat(itob(1), itob(1)) [slot 8]
+  pushint 1
+  itob
+  pushint 1
+  itob
+  concat
   store 8 // fx
   // bid = concat(bid, fx)
   load 5 // bid
@@ -247,7 +250,8 @@ create_bid:
   concat
   store 5 // bid
   // type
-  // bytes type = calc_type(Gtxn[asset_send_ix].AssetAmount, fx) [slot 9]
+  // bytes type = calc_type(b, Gtxn[asset_send_ix].AssetAmount, fx) [slot 9]
+  load 4 // b
   load 3 // asset_send_ix
   gtxns AssetAmount
   load 8 // fx
@@ -265,15 +269,13 @@ create_bid:
   pushint 1
   +
   store 10 // s
-  // int e = Global.GroupSize - 1 [slot 11]
+  // int e = Global.GroupSize [slot 11]
   global GroupSize
-  pushint 1
-  -
   store 11 // e
   // first 32 bytes of Txn.Note is B
-  // bytes note = extract(33, 0, Txn.Note) [slot 12]
+  // bytes note = extract(59, 0, Txn.Note) [slot 12]
   txn Note
-  extract 33 0
+  extract 59 0
   store 12 // note
   // for i in s:e:
     load 10 // s
@@ -283,19 +285,27 @@ create_bid:
     load 11 // e
     ==
     bnz l2_end
-    // if Gtxn[i].ApplicationArgs[0] == "add_data":
+    // if Gtxn[i].TypeEnum == Appl:
       load 13 // i
-      gtxnsa ApplicationArgs 0
-      pushbytes "add_data"
+      gtxns TypeEnum
+      pushint 6 // Appl
       ==
       bz l3_end
       // then:
-        // note = concat(note, Gtxn[i].Note)
-        load 12 // note
-        load 13 // i
-        gtxns Note
-        concat
-        store 12 // note
+        // if Gtxn[i].ApplicationArgs[0] == "add_data":
+          load 13 // i
+          gtxnsa ApplicationArgs 0
+          pushbytes "add_data"
+          ==
+          bz l4_end
+          // then:
+            // note = concat(note, Gtxn[i].Note)
+            load 12 // note
+            load 13 // i
+            gtxns Note
+            concat
+            store 12 // note
+          l4_end: // end
       l3_end: // end
     load 13 // i
     pushint 1
@@ -337,6 +347,15 @@ create_bid:
   sha512_256
   store 14 // bid_id
   
+  // log(Txn.Sender)
+  // log(b)
+  // log(currency_id_bytes)
+  // log(currency_amount_bytes)
+  // log(note)
+  // log(bid_id_prehash)
+  // log(bid_id)
+  // log(bid)
+  
   // create box
   // int box_existed = box_create(bid_id, len(bid)) [slot 15]
   load 14 // bid_id
@@ -361,31 +380,40 @@ create_bid:
 
 // block cancel_bid
 cancel_bid:
-  // bytes bid_id = Txn.ApplicationArgs[1] [slot 0]
+  //DEBUG
+  // bytes bid_contents = Txn.ApplicationArgs[1] [slot 0]
   txna ApplicationArgs 1
-  store 0 // bid_id
-  // int bid_exists [slot 1]
-  // bytes bid_contents [slot 2]
+  store 0 // bid_contents
+  // bytes bid_id = Txn.ApplicationArgs[1]
+  // int bid_exists
+  // bytes bid_contents
   // bid_exists, bid_contents = box_get(bid_id)
-  load 0 // bid_id
-  box_get
-  store 1 // bid_exists
-  store 2 // bid_contents
   // assert(bid_exists == 1)
-  load 1 // bid_exists
-  pushint 1
-  ==
-  assert
+  // BidWithoutNote bid = extract3(bid_contents, 0, BIDWITHOUTNOTESIZE) [slot 1]
+  load 0 // bid_contents
+  pushint 0
+  pushint 97 // BIDWITHOUTNOTESIZE
+  extract3
+  store 1 // bid
   
-  // BidWithoutNote bid = extract(0, BIDWITHOUTNOTESIZE, bid_contents) [slot 3]
-  load 2 // bid_contents
-  extract 0 BIDWITHOUTNOTESIZE
-  store 3 // bid
+  // _ = bid.a
+  load 1 // bid
+  extract 0 32 // a
+  pop // discarding value for _
+  // _ = bid.b
+  load 1 // bid
+  extract 32 32 // b
+  pop // discarding value for _
+  // _ = bid.currency_id
+  load 1 // bid
+  pushint 64
+  extract_uint64 // currency_id
+  pop // discarding value for _
   
   // only A can cancel
   // assert(Txn.Sender == bid.a)
   txn Sender
-  load 3 // bid
+  load 1 // bid
   extract 0 32 // a
   ==
   assert
@@ -396,16 +424,16 @@ cancel_bid:
     pushint 4 // Axfer
     itxn_field TypeEnum
     // AssetReceiver: bid.a
-    load 3 // bid
+    load 1 // bid
     extract 0 32 // a
     itxn_field AssetReceiver
     // AssetAmount: bid.currency_amount
-    load 3 // bid
+    load 1 // bid
     pushint 72
     extract_uint64 // currency_amount
     itxn_field AssetAmount
     // XferAsset: bid.currency_id
-    load 3 // bid
+    load 1 // bid
     pushint 64
     extract_uint64 // currency_id
     itxn_field XferAsset
@@ -430,9 +458,6 @@ cancel_bid:
   // # end
   
   // _ = box_del(bid_id)
-  load 0 // bid_id
-  box_del
-  pop // discarding value for _
   
   // exit(1)
   pushint 1
@@ -440,134 +465,50 @@ cancel_bid:
 
 // block trade
 trade:
-  // bytes bid_id = Txn.ApplicationArgs[1] [slot 0]
-  txna ApplicationArgs 1
-  store 0 // bid_id
-  // int bid_exists [slot 1]
-  // bytes bid_contents [slot 2]
+  // bytes bid_id = Txn.ApplicationArgs[1]
+  // int bid_exists
+  // bytes bid_contents
   // bid_exists, bid_contents = box_get(bid_id)
-  load 0 // bid_id
-  box_get
-  store 1 // bid_exists
-  store 2 // bid_contents
   // assert(bid_exists == 1)
-  load 1 // bid_exists
-  pushint 1
-  ==
-  assert
   
-  // BidWithoutNote bid = extract(0, BIDWITHOUTNOTESIZE, bid_contents) [slot 3]
-  load 2 // bid_contents
-  extract 0 BIDWITHOUTNOTESIZE
-  store 3 // bid
+  // BidWithoutNote bid = extract3(bid_contents, 0, BIDWITHOUTNOTESIZE)
   
   // assert(Txn.Sender == bid.b)
-  txn Sender
-  load 3 // bid
-  extract 32 32 // b
-  ==
-  assert
   
-  // Params p = app_global_get("a")
+  // # Params p = app_global_get("a")
   
-  // # send currency to owner
-  // int currency_amount_for_b = bid.currency_amount [slot 4]
-  load 3 // bid
-  pushint 72
-  extract_uint64 // currency_amount
-  store 4 // currency_amount_for_b
+  // # # send currency to owner
+  // int currency_amount_for_b = bid.currency_amount
   // inner_txn:
-  itxn_begin
-    // TypeEnum: Axfer
-    pushint 4 // Axfer
-    itxn_field TypeEnum
-    // AssetReceiver: bid.b
-    load 3 // bid
-    extract 32 32 // b
-    itxn_field AssetReceiver
-    // AssetAmount: currency_amount_for_b
-    load 4 // currency_amount_for_b
-    itxn_field AssetAmount
-    // XferAsset: bid.currency_id
-    load 3 // bid
-    pushint 64
-    extract_uint64 // currency_id
-    itxn_field XferAsset
-    // Fee: 1000
-    pushint 1000
-    itxn_field Fee
-  itxn_submit
-  // end inner_txn
+  //     TypeEnum: Axfer
+  //     # Sender: Global.CurrentApplicationAddress
+  //     AssetReceiver: bid.b
+  //     AssetAmount: currency_amount_for_b
+  //     XferAsset: bid.currency_id
+  //     Fee: 1000
+  // end
   
-  // note
-  // int s = Txn.GroupIndex + 1 [slot 5]
-  txn GroupIndex
-  pushint 1
-  +
-  store 5 // s
-  // int e = Global.GroupSize - 1 [slot 6]
-  global GroupSize
-  pushint 1
-  -
-  store 6 // e
-  // bytes note = Txn.Note [slot 7]
-  txn Note
-  store 7 // note
+  // # note
+  // int s = Txn.GroupIndex + 1
+  // int e = Global.GroupSize
+  // bytes note = Txn.Note
   // for i in s:e:
-    load 5 // s
-    store 8 // i
-    l4_for:
-    load 8 // i
-    load 6 // e
-    ==
-    bnz l4_end
-    // if Gtxn[i].ApplicationArgs[0] == "add_data":
-      load 8 // i
-      gtxnsa ApplicationArgs 0
-      pushbytes "add_data"
-      ==
-      bz l5_end
-      // then:
-        // note = concat(note, Gtxn[i].Note)
-        load 7 // note
-        load 8 // i
-        gtxns Note
-        concat
-        store 7 // note
-      l5_end: // end
-    load 8 // i
-    pushint 1
-    +
-    store 8 // i
-    b l4_for
-    l4_end: // end
+  //     if Gtxn[i].ApplicationArgs[0] == "add_data":
+  //         note = concat(note, Gtxn[i].Note)
+  //     end
+  // end
   
-  // TODO need multiple if note large
+  // # TODO need multiple if note large
   // inner_txn:
-  itxn_begin
-    // TypeEnum: Pay
-    pushint 1 // Pay
-    itxn_field TypeEnum
-    // Receiver: bid.b
-    load 3 // bid
-    extract 32 32 // b
-    itxn_field Receiver
-    // Amount: 0
-    pushint 0
-    itxn_field Amount
-    // Note: note
-    load 7 // note
-    itxn_field Note
-    // Fee: 1000
-    pushint 1000
-    itxn_field Fee
-  itxn_submit
-  // end inner_txn
+  //     TypeEnum: Pay
+  //     # Sender: Global.CurrentApplicationAddress
+  //     Receiver: bid.b
+  //     Amount: 0
+  //     Note: note
+  //     Fee: 1000
+  // end
   
   // _ = box_del(bid_id)
-  load 0 // bid_id
-  box_del
-  pop // discarding value for _
   
   // exit(1)
   pushint 1
@@ -602,12 +543,12 @@ store 19 // fx_d
   load 19 // fx_d
   pushint 0
   ==
-  bz l6_end
+  bz l5_end
   // then:
     // return "S"
     pushbytes "S"
     retsub
-  l6_end: // end
+  l5_end: // end
 // int fx_n = extract_uint64(fx, 0) [slot 20]
 load 16 // fx
 pushint 0
@@ -672,52 +613,52 @@ store 27 // chrony_lower_bound
   load 25 // currency_quantity_after_fx
   pushint 0
   ==
-  bz l7_elif_0
+  bz l6_elif_0
   // then:
     // if chrony_lower_bound == 0:
       load 27 // chrony_lower_bound
       pushint 0
       ==
-      bz l8_else
+      bz l7_else
       // then:
         // return "L"
         pushbytes "L"
         retsub
-      b l8_end
-      l8_else:
+      b l7_end
+      l7_else:
       // else:
         // 0 lurker with 0<min is a spammer
         // exit(0)
         pushint 0
         return
-      l8_end: // end
-  b l7_end
-  l7_elif_0:
+      l7_end: // end
+  b l6_end
+  l6_elif_0:
   // elif currency_quantity_after_fx < chrony_lower_bound:
   load 25 // currency_quantity_after_fx
   load 27 // chrony_lower_bound
   <
-  bz l7_elif_1
+  bz l6_elif_1
     // return "L"
     pushbytes "L"
     retsub
-  b l7_end
-  l7_elif_1:
+  b l6_end
+  l6_elif_1:
   // elif chrony_upper_bound < currency_quantity_after_fx:
   load 26 // chrony_upper_bound
   load 25 // currency_quantity_after_fx
   <
-  bz l7_else
+  bz l6_else
     // return "H"
     pushbytes "H"
     retsub
-  b l7_end
-  l7_else:
+  b l6_end
+  l6_else:
   // else:
     // return "C"
     pushbytes "C"
     retsub
-  l7_end: // end
+  l6_end: // end
 
 // should never reach here
 // exit(0)
@@ -741,7 +682,7 @@ pop // discarding value for _
   load 29 // is_opted_in
   pushint 0
   ==
-  bz l9_end
+  bz l8_end
   // then:
     // inner_txn:
     itxn_begin
@@ -765,7 +706,7 @@ pop // discarding value for _
       itxn_field Fee
     itxn_submit
     // end inner_txn
-  l9_end: // end
+  l8_end: // end
 // return
 retsub
 
@@ -781,7 +722,7 @@ retsub
 //     assert(Gtxn[algo_send_ix].TypeEnum == Pay)
 //     assert(Gtxn[algo_send_ix].Sender == Gtxn[asset_send_ix].Sender)
 //     assert(Gtxn[algo_send_ix].Receiver == Global.CurrentApplicationAddress)
-//     int e = Global.GroupSize - 1
+//     int e = Global.GroupSize
 //     for i in 4:e:
 //         assert(Gtxn[i].TypeEnum == Appl)
 //     end
@@ -791,23 +732,42 @@ retsub
 // func get_params(b: bytes) bytes:
 __func__get_params:
 store 30 // b
-// bytes p [slot 31]
-// int p_exists [slot 32]
+//DEBUG
+// bytes p
+// int p_exists
 // p_exists, p = box_get(b)
-load 30 // b
-box_get
-store 32 // p_exists
-store 31 // p
 // if p_exists == 1:
-  load 32 // p_exists
-  pushint 1
-  ==
-  bz l10_end
-  // then:
-    // return p
-    load 31 // p
-    retsub
-  l10_end: // end
-// return "1111"
-pushbytes "1111"
+//     return p
+// end
+// bytes ps = concat(itob(1), itob(1)) [slot 31]
+pushint 1
+itob
+pushint 1
+itob
+concat
+store 31 // ps
+// ps = concat(ps, itob(1))
+load 31 // ps
+pushint 1
+itob
+concat
+store 31 // ps
+// ps = concat(ps, itob(1))
+load 31 // ps
+pushint 1
+itob
+concat
+store 31 // ps
+// ps = concat(ps, "00000000000000000000000000000000")
+load 31 // ps
+pushbytes "00000000000000000000000000000000"
+concat
+store 31 // ps
+// ps = concat(ps, "0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000")
+load 31 // ps
+pushbytes "0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+concat
+store 31 // ps
+// return ps
+load 31 // ps
 retsub

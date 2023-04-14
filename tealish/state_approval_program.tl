@@ -106,8 +106,9 @@ block delete_app:
 end
 
 block main:
+
     # safety
-    int e = Global.GroupSize-1
+    int e = Global.GroupSize
     for i in 0:e:
         assert(Gtxn[i].RekeyTo == Global.ZeroAddress)
     end
@@ -135,7 +136,7 @@ block create_bid:
 
     # box_content
     # A, b = B
-    bytes b = extract(0, 32, Txn.Note)
+    bytes b = Txn.ApplicationArgs[1]
     bytes bid = concat(Txn.Sender, b)
     # currency_id
     bytes currency_id_bytes = itob(Gtxn[asset_send_ix].XferAsset)
@@ -144,20 +145,24 @@ block create_bid:
     bytes currency_amount_bytes = itob(Gtxn[asset_send_ix].AssetAmount)
     bid = concat(bid, currency_amount_bytes)
     # fx
-    bytes fx = Gtxn[fx_call_ix].LastLog
+    # bytes fx = Gtxn[fx_call_ix].LastLog
+    # DEBUG
+    bytes fx = concat(itob(1), itob(1))
     bid = concat(bid, fx)
     # type
-    bytes type = calc_type(Gtxn[asset_send_ix].AssetAmount, fx)
+    bytes type = calc_type(b, Gtxn[asset_send_ix].AssetAmount, fx)
     bid = concat(bid, type)
 
     # note
     int s = Txn.GroupIndex + 1
-    int e = Global.GroupSize - 1
+    int e = Global.GroupSize
     # first 32 bytes of Txn.Note is B
-    bytes note = extract(33, 0, Txn.Note)
+    bytes note = extract(59, 0, Txn.Note)
     for i in s:e:
-        if Gtxn[i].ApplicationArgs[0] == "add_data":
-            note = concat(note, Gtxn[i].Note)
+        if Gtxn[i].TypeEnum == Appl:
+            if Gtxn[i].ApplicationArgs[0] == "add_data":
+                note = concat(note, Gtxn[i].Note)
+            end
         end
     end
     bid = concat(bid, note)
@@ -171,6 +176,15 @@ block create_bid:
     bid_id_prehash = concat(bid_id_prehash, note)
     bytes bid_id = sha512_256(bid_id_prehash)
 
+    # log(Txn.Sender)
+    # log(b)
+    # log(currency_id_bytes)
+    # log(currency_amount_bytes)
+    # log(note)
+    # log(bid_id_prehash)
+    # log(bid_id)
+    # log(bid)
+
     # create box
     int box_existed = box_create(bid_id, len(bid))
     assert(box_existed == 1)
@@ -180,13 +194,18 @@ block create_bid:
 end
 
 block cancel_bid:
-    bytes bid_id = Txn.ApplicationArgs[1]
-    int bid_exists
-    bytes bid_contents
-    bid_exists, bid_contents = box_get(bid_id)
-    assert(bid_exists == 1)
+    #DEBUG
+    bytes bid_contents = Txn.ApplicationArgs[1]
+    # bytes bid_id = Txn.ApplicationArgs[1]
+    # int bid_exists
+    # bytes bid_contents
+    # bid_exists, bid_contents = box_get(bid_id)
+    # assert(bid_exists == 1)
+    BidWithoutNote bid = extract3(bid_contents, 0, BIDWITHOUTNOTESIZE)
 
-    BidWithoutNote bid = extract(0, BIDWITHOUTNOTESIZE, bid_contents)
+    _ = bid.a
+    _ = bid.b
+    _ = bid.currency_id
 
     # only A can cancel
     assert(Txn.Sender == bid.a)
@@ -214,56 +233,56 @@ block cancel_bid:
     # #     end
     # # end
 
-    _ = box_del(bid_id)
+    # _ = box_del(bid_id)
 
     exit(1)
 end
 
 block trade:
-    bytes bid_id = Txn.ApplicationArgs[1]
-    int bid_exists
-    bytes bid_contents
-    bid_exists, bid_contents = box_get(bid_id)
-    assert(bid_exists == 1)
+    # bytes bid_id = Txn.ApplicationArgs[1]
+    # int bid_exists
+    # bytes bid_contents
+    # bid_exists, bid_contents = box_get(bid_id)
+    # assert(bid_exists == 1)
 
-    BidWithoutNote bid = extract(0, BIDWITHOUTNOTESIZE, bid_contents)
+    # BidWithoutNote bid = extract3(bid_contents, 0, BIDWITHOUTNOTESIZE)
 
-    assert(Txn.Sender == bid.b)
+    # assert(Txn.Sender == bid.b)
 
-    # Params p = app_global_get("a")
+    # # Params p = app_global_get("a")
 
-    # # send currency to owner
-    int currency_amount_for_b = bid.currency_amount
-    inner_txn:
-        TypeEnum: Axfer
-        # Sender: Global.CurrentApplicationAddress
-        AssetReceiver: bid.b
-        AssetAmount: currency_amount_for_b
-        XferAsset: bid.currency_id
-        Fee: 1000
-    end
+    # # # send currency to owner
+    # int currency_amount_for_b = bid.currency_amount
+    # inner_txn:
+    #     TypeEnum: Axfer
+    #     # Sender: Global.CurrentApplicationAddress
+    #     AssetReceiver: bid.b
+    #     AssetAmount: currency_amount_for_b
+    #     XferAsset: bid.currency_id
+    #     Fee: 1000
+    # end
 
-    # note
-    int s = Txn.GroupIndex + 1
-    int e = Global.GroupSize - 1
-    bytes note = Txn.Note
-    for i in s:e:
-        if Gtxn[i].ApplicationArgs[0] == "add_data":
-            note = concat(note, Gtxn[i].Note)
-        end
-    end
+    # # note
+    # int s = Txn.GroupIndex + 1
+    # int e = Global.GroupSize
+    # bytes note = Txn.Note
+    # for i in s:e:
+    #     if Gtxn[i].ApplicationArgs[0] == "add_data":
+    #         note = concat(note, Gtxn[i].Note)
+    #     end
+    # end
 
-    # TODO need multiple if note large
-    inner_txn:
-        TypeEnum: Pay
-        # Sender: Global.CurrentApplicationAddress
-        Receiver: bid.b
-        Amount: 0
-        Note: note
-        Fee: 1000
-    end
+    # # TODO need multiple if note large
+    # inner_txn:
+    #     TypeEnum: Pay
+    #     # Sender: Global.CurrentApplicationAddress
+    #     Receiver: bid.b
+    #     Amount: 0
+    #     Note: note
+    #     Fee: 1000
+    # end
 
-    _ = box_del(bid_id)
+    # _ = box_del(bid_id)
 
     exit(1)
 end
@@ -345,7 +364,7 @@ end
 #     assert(Gtxn[algo_send_ix].TypeEnum == Pay)
 #     assert(Gtxn[algo_send_ix].Sender == Gtxn[asset_send_ix].Sender)
 #     assert(Gtxn[algo_send_ix].Receiver == Global.CurrentApplicationAddress)
-#     int e = Global.GroupSize - 1
+#     int e = Global.GroupSize
 #     for i in 4:e:
 #         assert(Gtxn[i].TypeEnum == Appl)
 #     end
@@ -353,11 +372,17 @@ end
 # end
 
 func get_params(b: bytes) bytes:
-    bytes p
-    int p_exists
-    p_exists, p = box_get(b)
-    if p_exists == 1:
-        return p
-    end
-    return "1111"
+    #DEBUG
+    # bytes p
+    # int p_exists
+    # p_exists, p = box_get(b)
+    # if p_exists == 1:
+    #     return p
+    # end
+    bytes ps = concat(itob(1), itob(1))
+    ps = concat(ps, itob(1))
+    ps = concat(ps, itob(1))
+    ps = concat(ps, "00000000000000000000000000000000")
+    ps = concat(ps, "0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000")
+    return ps
 end

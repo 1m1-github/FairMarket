@@ -15,7 +15,7 @@
 // box with user name contains own params (updatable)
 // box with hash(ABNoteCurrency) is bid
 
-// size=4*8+32+256=320
+// size=4*8+2*32=96
 
 // size=2*32+5*8+1=105
 
@@ -562,6 +562,104 @@ trade:
 
 // block update_params
 update_params:
+  
+  // bytes params_id = Txn.Sender [slot 0]
+  txn Sender
+  store 0 // params_id
+  
+  // bytes chrony_importance_bytes = Txn.ApplicationArgs[1] [slot 1]
+  txna ApplicationArgs 1
+  store 1 // chrony_importance_bytes
+  // bytes highroller_importance_bytes = Txn.ApplicationArgs[2] [slot 2]
+  txna ApplicationArgs 2
+  store 2 // highroller_importance_bytes
+  // bytes params = concat(chrony_importance_bytes, highroller_importance_bytes) [slot 3]
+  load 1 // chrony_importance_bytes
+  load 2 // highroller_importance_bytes
+  concat
+  store 3 // params
+  // bytes subjective_importance_bytes = Txn.ApplicationArgs[3] [slot 4]
+  txna ApplicationArgs 3
+  store 4 // subjective_importance_bytes
+  // params = concat(params, subjective_importance_bytes)
+  load 3 // params
+  load 4 // subjective_importance_bytes
+  concat
+  store 3 // params
+  // bytes min_bytes = Txn.ApplicationArgs[4] [slot 5]
+  txna ApplicationArgs 4
+  store 5 // min_bytes
+  // params = concat(params, min_bytes)
+  load 3 // params
+  load 5 // min_bytes
+  concat
+  store 3 // params
+  // bytes description = Txn.ApplicationArgs[5] [slot 6]
+  txna ApplicationArgs 5
+  store 6 // description
+  // params = concat(params, description)
+  load 3 // params
+  load 6 // description
+  concat
+  store 3 // params
+  // bytes encryption = Txn.ApplicationArgs[6] [slot 7]
+  txna ApplicationArgs 6
+  store 7 // encryption
+  // params = concat(params, encryption)
+  load 3 // params
+  load 7 // encryption
+  concat
+  store 3 // params
+  
+  // assert(len(chrony_importance_bytes) == 8)
+  load 1 // chrony_importance_bytes
+  len
+  pushint 8
+  ==
+  assert
+  // assert(len(highroller_importance_bytes) == 8)
+  load 2 // highroller_importance_bytes
+  len
+  pushint 8
+  ==
+  assert
+  // assert(len(subjective_importance_bytes) == 8)
+  load 4 // subjective_importance_bytes
+  len
+  pushint 8
+  ==
+  assert
+  // assert(len(min_bytes) == 8)
+  load 5 // min_bytes
+  len
+  pushint 8
+  ==
+  assert
+  // assert(len(description) == 32)
+  load 6 // description
+  len
+  pushint 32
+  ==
+  assert
+  // assert(len(encryption) == 32)
+  load 7 // encryption
+  len
+  pushint 32
+  ==
+  assert
+  
+  // _ = box_create(params_id, len(params))
+  load 0 // params_id
+  load 3 // params
+  len
+  box_create
+  pop // discarding value for _
+  // box_replace(params_id, 0, params)
+  load 0 // params_id
+  pushint 0
+  load 3 // params
+  box_replace
+  
   // exit(1)
   pushint 1
   return
@@ -795,42 +893,60 @@ retsub
 // func get_params(b: bytes) bytes:
 __func__get_params:
 store 34 // b
-//DEBUG
-// bytes p
-// int p_exists
+// bytes p [slot 35]
+// int p_exists [slot 36]
 // p_exists, p = box_get(b)
+load 34 // b
+box_get
+store 36 // p_exists
+store 35 // p
 // if p_exists == 1:
-//     return p
-// end
-// bytes ps = concat(itob(1), itob(1)) [slot 35]
+  load 36 // p_exists
+  pushint 1
+  ==
+  bz l11_end
+  // then:
+    // return p
+    load 35 // p
+    retsub
+  l11_end: // end
+
+// default params
+
+// importances
+// p = concat(itob(1), itob(1))
 pushint 1
 itob
 pushint 1
 itob
 concat
-store 35 // ps
-// ps = concat(ps, itob(1))
-load 35 // ps
+store 35 // p
+// p = concat(p, itob(1))
+load 35 // p
 pushint 1
 itob
 concat
-store 35 // ps
-// ps = concat(ps, itob(1))
-load 35 // ps
+store 35 // p
+// min
+// p = concat(p, itob(1))
+load 35 // p
 pushint 1
 itob
 concat
-store 35 // ps
-// ps = concat(ps, "00000000000000000000000000000000")
-load 35 // ps
+store 35 // p
+// description
+// p = concat(p, "00000000000000000000000000000000")
+load 35 // p
 pushbytes "00000000000000000000000000000000"
 concat
-store 35 // ps
-// ps = concat(ps, "0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000")
-load 35 // ps
-pushbytes "0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+store 35 // p
+// encryption
+// p = concat(p, "00000000000000000000000000000000")
+load 35 // p
+pushbytes "00000000000000000000000000000000"
 concat
-store 35 // ps
-// return ps
-load 35 // ps
+store 35 // p
+
+// return p
+load 35 // p
 retsub

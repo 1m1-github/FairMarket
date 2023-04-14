@@ -28,19 +28,9 @@ tealish compile $TEALISH_DIR/$APPROVAL_FILE_NAME.tl
 tealish compile $TEALISH_DIR/$CLEAR_FILE_NAME.tl
 
 # create app
-# export CHRONY_IMPORTANCE="int:1"
-# export HIGHROLLER_IMPORTANCE="int:1"
-# export SUBJECTIVE_IMPORTANCE="int:1"
-# export MIN="int:1"
 # export MIN_PRECISION_N="int:1"
 # export MIN_PRECISION_D="int:10"
 # export VERSION="int:1"
-# export REPUTATION_P="int:0"
-# export REPUTATION_N="int:0"
-# export DESCRIPTION="str:DESCRIPTION"
-# export ENCRYPTION_1="str:abcd"
-# export ENCRYPTION_2="str:abcd"
-# export ENCRYPTION_3="str:abcd"
 goal app create --creator $CREATOR --approval-prog $TEAL_DIR/$APPROVAL_FILE_NAME.teal --clear-prog $TEAL_DIR/$CLEAR_FILE_NAME.teal --global-byteslices 0 --global-ints 3 --local-byteslices 0 --local-ints 0
 export FAIRMARKET_APP=190904981
 goal app info --app-id $FAIRMARKET_APP
@@ -94,6 +84,20 @@ goal clerk dryrun -t $TXNS_DIR/trade.stxn --dryrun-dump -o $TXNS_DIR/dryrun.json
 tealdbg debug $TEAL_DIR/$APPROVAL_FILE_NAME.teal -d $TXNS_DIR/dryrun.json --group-index 0 --mode application
 
 # update params
+export CHRONY_IMPORTANCE="int:1"
+export HIGHROLLER_IMPORTANCE="int:1"
+export SUBJECTIVE_IMPORTANCE="int:1"
+export MIN="int:1"
+export DESCRIPTION="str:DESCRIPTIONDESCRIPTIONDESCRIPTIO"
+export ENCRYPTION="b64:y2Trlfq3rEvjm42egC3dXgxx5riOZkh94GwPl4dmrFE="
+goal app call --from $B --app-id $FAIRMARKET_APP --app-arg "str:update_params" --app-arg $CHRONY_IMPORTANCE --app-arg $HIGHROLLER_IMPORTANCE --app-arg $SUBJECTIVE_IMPORTANCE --app-arg $MIN --app-arg $DESCRIPTION --app-arg $ENCRYPTION --box "addr:$B"
+
+tealish compile $TEALISH_DIR/$APPROVAL_FILE_NAME.tl
+goal app update --from=$CREATOR --app-id=$FAIRMARKET_APP --approval-prog $TEAL_DIR/$APPROVAL_FILE_NAME.teal --clear-prog $TEAL_DIR/$CLEAR_FILE_NAME.teal
+goal app call --from $B --app-id $FAIRMARKET_APP --app-arg "str:update_params" --app-arg $CHRONY_IMPORTANCE --app-arg $HIGHROLLER_IMPORTANCE --app-arg $SUBJECTIVE_IMPORTANCE --app-arg $MIN --app-arg $DESCRIPTION --app-arg $ENCRYPTION --out $TXNS_DIR/update_params.stxn
+goal clerk dryrun -t $TXNS_DIR/update_params.stxn --dryrun-dump -o $TXNS_DIR/dryrun.json
+tealdbg debug $TEAL_DIR/$APPROVAL_FILE_NAME.teal -d $TXNS_DIR/dryrun.json --group-index 0 --mode application
+goal clerk rawsend --filename $TXNS_DIR/update_params.stxn
 
 #debug
 goal app read --app-id $FAIRMARKET_APP --global

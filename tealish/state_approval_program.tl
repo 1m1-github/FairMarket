@@ -15,7 +15,7 @@
 # box with user name contains own params (updatable)
 # box with hash(ABNoteCurrency) is bid
 
-# size=4*8+32+256=320
+# size=4*8+2*32=96
 struct Params:
     chrony_importance: int
     highroller_importance: int
@@ -23,7 +23,7 @@ struct Params:
     # min in ALGO
     min: int
     description: bytes[32]
-    encryption: bytes[256]
+    encryption: bytes[32]
 end
 
 # size=2*32+5*8+1=105
@@ -263,6 +263,31 @@ block trade:
 end
 
 block update_params:
+
+    bytes params_id = Txn.Sender
+
+    bytes chrony_importance_bytes = Txn.ApplicationArgs[1]
+    bytes highroller_importance_bytes = Txn.ApplicationArgs[2]
+    bytes params = concat(chrony_importance_bytes, highroller_importance_bytes)
+    bytes subjective_importance_bytes = Txn.ApplicationArgs[3]
+    params = concat(params, subjective_importance_bytes)
+    bytes min_bytes = Txn.ApplicationArgs[4]
+    params = concat(params, min_bytes)
+    bytes description = Txn.ApplicationArgs[5]
+    params = concat(params, description)
+    bytes encryption = Txn.ApplicationArgs[6]
+    params = concat(params, encryption)
+
+    assert(len(chrony_importance_bytes) == 8)
+    assert(len(highroller_importance_bytes) == 8)
+    assert(len(subjective_importance_bytes) == 8)
+    assert(len(min_bytes) == 8)
+    assert(len(description) == 32)
+    assert(len(encryption) == 32)
+
+    _ = box_create(params_id, len(params))
+    box_replace(params_id, 0, params)
+
     exit(1)
 end
 
@@ -352,17 +377,24 @@ end
 # end
 
 func get_params(b: bytes) bytes:
-    #DEBUG
-    # bytes p
-    # int p_exists
-    # p_exists, p = box_get(b)
-    # if p_exists == 1:
-    #     return p
-    # end
-    bytes ps = concat(itob(1), itob(1))
-    ps = concat(ps, itob(1))
-    ps = concat(ps, itob(1))
-    ps = concat(ps, "00000000000000000000000000000000")
-    ps = concat(ps, "0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000")
-    return ps
+    bytes p
+    int p_exists
+    p_exists, p = box_get(b)
+    if p_exists == 1:
+        return p
+    end
+
+    # default params
+
+    # importances
+    p = concat(itob(1), itob(1))
+    p = concat(p, itob(1))
+    # min
+    p = concat(p, itob(1))
+    # description
+    p = concat(p, "00000000000000000000000000000000")
+    # encryption
+    p = concat(p, "00000000000000000000000000000000")
+    
+    return p
 end

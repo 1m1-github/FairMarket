@@ -26,16 +26,18 @@ struct Params:
     encryption: bytes[256]
 end
 
-# size=32+4*8+1=65
+# size=2*32+4*8+1=97
 struct BidWithoutNote:
-    # a = A
+    # a = A, b = B
     a: bytes[32]
+    b: bytes[32]
     currency_id: int
     currency_amount: int
     fx_n: int
     fx_d: int
     type: byte[1]
 end
+const int BIDWITHOUTNOTESIZE = 97
 
 const int FX_APP = 178969021
 
@@ -132,8 +134,9 @@ block create_bid:
     opt_in(Gtxn[asset_send_ix].XferAsset)
 
     # box_content
-    # A
-    bytes bid = Txn.Sender
+    # A, b = B
+    bytes b = extract(0, 32, Txn.Note)
+    bytes bid = concat(Txn.Sender, b)
     # currency_id
     bytes currency_id_bytes = itob(Gtxn[asset_send_ix].XferAsset)
     bid = concat(bid, currency_id_bytes)
@@ -161,8 +164,6 @@ block create_bid:
 
     # calc bid_id
     # BID_ID = hash($A$B$CURRENCY_ID$CURRENCY_AMOUNT$NOTE)
-    # b = B
-    bytes b = extract(0, 32, Txn.Note)
     bytes bid_id_prehash = concat(Txn.Sender, b)
     bid_id_prehash = concat(bid_id_prehash, currency_id)
     bid_id_prehash = concat(bid_id_prehash, currency_amount)
@@ -178,24 +179,25 @@ block create_bid:
 end
 
 block cancel_bid:
-    # bytes box_name = Txn.ApplicationArgs[1]
-    # int box_exists
-    # bytes box_contents
-    # box_exists, box_contents = box_get(box_name)
-    # assert(box_exists == 1)
+    bytes bid_id = Txn.ApplicationArgs[1]
+    int bid_exists
+    bytes bid_contents
+    bid_exists, bid_contents = box_get(bid_id)
+    assert(bid_exists == 1)
 
-    # BidWithoutNote bid = substring(0, 105, box_contents)
+    BidWithoutNote bid = extract(0, BIDWITHOUTNOTESIZE, bid_contents)
 
-    # assert(Txn.Sender == bid.owner)
+    # only A can cancel
+    assert(Txn.Sender == bid.a)
 
-    # inner_txn:
-    #     TypeEnum: Axfer
-    #     Sender: Global.CurrentApplicationAddress
-    #     AssetReceiver: bid.owner
-    #     AssetAmount: bid.currency_quantity
-    #     XferAsset: bid.currency_id
-    #     Fee: 0
-    # end
+    inner_txn:
+        TypeEnum: Axfer
+        # Sender: Global.CurrentApplicationAddress
+        AssetReceiver: bid.a
+        AssetAmount: bid.currency_amount
+        XferAsset: bid.currency_id
+        Fee: 0
+    end
 
     # # # opt-out if no balance? TODO (e.g. return subj currency reserve)
     # # int currency_balance
@@ -211,37 +213,56 @@ block cancel_bid:
     # #     end
     # # end
 
-    # _ = box_del(box_name)
+    _ = box_del(bid_id)
 
     exit(1)
 end
 
 block trade:
+    bytes bid_id = Txn.ApplicationArgs[1]
+    int bid_exists
+    bytes bid_contents
+    bid_exists, bid_contents = box_get(bid_id)
+    assert(bid_exists == 1)
+
+    BidWithoutNote bid = extract(0, BIDWITHOUTNOTESIZE, bid_contents)
+
+    assert(Txn.Sender == bid.b)
+
     # Params p = app_global_get("a")
 
     # # send currency to owner
-    # inner_txn:
-    #     TypeEnum: Axfer
-    #     Sender: Global.CurrentApplicationAddress
-    #     AssetReceiver: p.owner
-    #     AssetAmount: amount_for_owner
-    #     XferAsset: bid.currency_id
-    #     Fee: 0
-    # end
+    int currency_amount_for_b = bid.currency_amount
+    inner_txn:
+        TypeEnum: Axfer
+        # Sender: Global.CurrentApplicationAddress
+        AssetReceiver: bid.b
+        AssetAmount: currency_amount_for_b
+        XferAsset: bid.currency_id
+        Fee: 1000
+    end
 
-    # # send currency to system
-    # if 0 < amount_for_system:
-    #     inner_txn:
-    #         TypeEnum: Axfer
-    #         Sender: Global.CurrentApplicationAddress
-    #         AssetReceiver: SYSTEM_ACCOUNT
-    #         AssetAmount: amount_for_system
-    #         XferAsset: bid.currency_id
-    #         Fee: 0
-    #     end
-    # end
+    # note
+    int s = Txn.GroupIndex + 1
+    int e = Global.GroupSize - 1
+    bytes note = Txn.Note
+    for i in s:e:
+        if Gtxn[i].ApplicationArgs[0] == "add_data":
+            note = concat(note, Gtxn[i].Note)
+        end
+    end
 
-    # _ = box_del(box_name)
+    # TODO need multiple if note large
+    inner_txn:
+        TypeEnum: Pay
+        # Sender: Global.CurrentApplicationAddress
+        Receiver: bid.b
+        Amount: 0
+        Note: note
+        Fee: 1000
+    end
+
+    _ = box_del(bid_id)
 
     exit(1)
 end
@@ -257,36 +278,35 @@ end
 
 
 # TODO assert input sizes, choose m appropriately
-func calc_type(asset_amount: int, fx: bytes) bytes:
+func calc_type(b: bytes, asset_amount: int, fx: bytes) bytes:
+    int fx_d = extract_uint64(fx, 8)
+    if fx_d == 0:
+        return "S"
+    end
+    int fx_n = extract_uint64(fx, 0)
 
-    # int fx_d = extract_uint64(fx, 8)
-    # if fx_d == 0:
-    #     return "S"
-    # end
-    # int fx_n = extract_uint64(fx, 0)
+    int m = 10000
 
-    # int m = 10000
-
-    # Params p = app_global_get("a")
+    Params p = get_params(b)
     
-    # int currency_quantity_after_fx = (m * (asset_amount * fx_n)) / fx_d
-    # int chrony_upper_bound = p.min * (m + ((m * p.min_precision_n) / p.min_precision_d))
-    # int chrony_lower_bound = p.min * (m - ((m * p.min_precision_n) / p.min_precision_d))
+    int currency_quantity_after_fx = (m * (asset_amount * fx_n)) / fx_d
+    int chrony_upper_bound = p.min * (m + ((m * p.min_precision_n) / p.min_precision_d))
+    int chrony_lower_bound = p.min * (m - ((m * p.min_precision_n) / p.min_precision_d))
 
-    # if currency_quantity_after_fx == 0:
-    #     if chrony_lower_bound == 0:
-    #         return "L"
-    #     else:
-    #         # 0 lurker with 0<min is a spammer
-    #         exit(0)
-    #     end
-    # elif currency_quantity_after_fx < chrony_lower_bound:
-    #     return "L"
-    # elif chrony_upper_bound < currency_quantity_after_fx:
-    #     return "H"
-    # else:
-    #     return "C"
-    # end
+    if currency_quantity_after_fx == 0:
+        if chrony_lower_bound == 0:
+            return "L"
+        else:
+            # 0 lurker with 0<min is a spammer
+            exit(0)
+        end
+    elif currency_quantity_after_fx < chrony_lower_bound:
+        return "L"
+    elif chrony_upper_bound < currency_quantity_after_fx:
+        return "H"
+    else:
+        return "C"
+    end
 
     # should never reach here
     exit(0)
@@ -309,26 +329,31 @@ func opt_in(asset_id: int):
     return
 end
 
-func check_create_bid(asset_send_ix: int, fx_call_ix: int, app_call_ix: int, algo_send_ix: int):
-    assert(Gtxn[asset_send_ix].TypeEnum == Axfer)
-    assert(Gtxn[asset_send_ix].AssetReceiver == Global.CurrentApplicationAddress)
-    assert(Gtxn[fx_call_ix].TypeEnum == Appl)
-    assert(Gtxn[fx_call_ix].Sender == Gtxn[asset_send_ix].Sender)
-    assert(Gtxn[fx_call_ix].ApplicationID == FX_APP)
-    assert(Gtxn[asset_send_ix].XferAsset == Gtxn[fx_call_ix].Assets[0])
-    assert(Txn.GroupIndex == app_call_ix)
-    assert(Txn.Sender == Gtxn[asset_send_ix].Sender)
-    assert(Gtxn[algo_send_ix].TypeEnum == Pay)
-    assert(Gtxn[algo_send_ix].Sender == Gtxn[asset_send_ix].Sender)
-    assert(Gtxn[algo_send_ix].Receiver == Global.CurrentApplicationAddress)
-    int e = Global.GroupSize - 1
-    for i in 4:e:
-        assert(Gtxn[i].TypeEnum == Appl)
-    end
-    return
-end
+# func check_create_bid(asset_send_ix: int, fx_call_ix: int, app_call_ix: int, algo_send_ix: int):
+#     assert(Gtxn[asset_send_ix].TypeEnum == Axfer)
+#     assert(Gtxn[asset_send_ix].AssetReceiver == Global.CurrentApplicationAddress)
+#     assert(Gtxn[fx_call_ix].TypeEnum == Appl)
+#     assert(Gtxn[fx_call_ix].Sender == Gtxn[asset_send_ix].Sender)
+#     assert(Gtxn[fx_call_ix].ApplicationID == FX_APP)
+#     assert(Gtxn[asset_send_ix].XferAsset == Gtxn[fx_call_ix].Assets[0])
+#     assert(Txn.GroupIndex == app_call_ix)
+#     assert(Txn.Sender == Gtxn[asset_send_ix].Sender)
+#     assert(Gtxn[algo_send_ix].TypeEnum == Pay)
+#     assert(Gtxn[algo_send_ix].Sender == Gtxn[asset_send_ix].Sender)
+#     assert(Gtxn[algo_send_ix].Receiver == Global.CurrentApplicationAddress)
+#     int e = Global.GroupSize - 1
+#     for i in 4:e:
+#         assert(Gtxn[i].TypeEnum == Appl)
+#     end
+#     return
+# end
 
-func default_params() Params:
-    Params p = "1111"
+func get_params(b: bytes) Params:
+    Params p
+    int p_exists
+    p, p_exists = box_get(b)
+    if p_exists == 0:
+        Params p = "1111"
+    end
     return p
 end

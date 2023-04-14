@@ -26,7 +26,7 @@ struct Params:
     encryption: bytes[256]
 end
 
-# size=2*32+4*8+1=97
+# size=2*32+5*8+1=105
 struct BidWithoutNote:
     # a = A, b = B
     a: bytes[32]
@@ -36,6 +36,7 @@ struct BidWithoutNote:
     fx_n: int
     fx_d: int
     type: byte[1]
+    time: int
 end
 const int BIDWITHOUTNOTESIZE = 97
 
@@ -145,18 +146,20 @@ block create_bid:
     bytes currency_amount_bytes = itob(Gtxn[asset_send_ix].AssetAmount)
     bid = concat(bid, currency_amount_bytes)
     # fx
-    # bytes fx = Gtxn[fx_call_ix].LastLog
-    # DEBUG
-    bytes fx = concat(itob(1), itob(1))
+    bytes fx = Gtxn[fx_call_ix].LastLog
     bid = concat(bid, fx)
     # type
     bytes type = calc_type(b, Gtxn[asset_send_ix].AssetAmount, fx)
     bid = concat(bid, type)
 
+    # time
+    bytes time_bytes = itob(Global.LatestTimestamp)
+    bid = concat(bid, time_bytes)
+
     # note
     int s = Txn.GroupIndex + 1
     int e = Global.GroupSize
-    # first 32 bytes of Txn.Note is B
+    # first 58 bytes of Txn.Note is B as string
     bytes note = extract(59, 0, Txn.Note)
     for i in s:e:
         if Gtxn[i].TypeEnum == Appl:
@@ -176,15 +179,6 @@ block create_bid:
     bid_id_prehash = concat(bid_id_prehash, note)
     bytes bid_id = sha512_256(bid_id_prehash)
 
-    # log(Txn.Sender)
-    # log(b)
-    # log(currency_id_bytes)
-    # log(currency_amount_bytes)
-    # log(note)
-    # log(bid_id_prehash)
-    # log(bid_id)
-    # log(bid)
-
     # create box
     int box_existed = box_create(bid_id, len(bid))
     assert(box_existed == 1)
@@ -194,25 +188,18 @@ block create_bid:
 end
 
 block cancel_bid:
-    #DEBUG
-    bytes bid_contents = Txn.ApplicationArgs[1]
-    # bytes bid_id = Txn.ApplicationArgs[1]
-    # int bid_exists
-    # bytes bid_contents
-    # bid_exists, bid_contents = box_get(bid_id)
-    # assert(bid_exists == 1)
+    bytes bid_id = Txn.ApplicationArgs[1]
+    int bid_exists
+    bytes bid_contents
+    bid_exists, bid_contents = box_get(bid_id)
+    assert(bid_exists == 1)
     BidWithoutNote bid = extract3(bid_contents, 0, BIDWITHOUTNOTESIZE)
-
-    _ = bid.a
-    _ = bid.b
-    _ = bid.currency_id
 
     # only A can cancel
     assert(Txn.Sender == bid.a)
 
     inner_txn:
         TypeEnum: Axfer
-        # Sender: Global.CurrentApplicationAddress
         AssetReceiver: bid.a
         AssetAmount: bid.currency_amount
         XferAsset: bid.currency_id
@@ -233,7 +220,7 @@ block cancel_bid:
     # #     end
     # # end
 
-    # _ = box_del(bid_id)
+    _ = box_del(bid_id)
 
     exit(1)
 end
@@ -275,7 +262,6 @@ block trade:
     # # TODO need multiple if note large
     # inner_txn:
     #     TypeEnum: Pay
-    #     # Sender: Global.CurrentApplicationAddress
     #     Receiver: bid.b
     #     Amount: 0
     #     Note: note
@@ -342,7 +328,6 @@ func opt_in(asset_id: int):
     if is_opted_in == 0:
         inner_txn:
             TypeEnum: Axfer
-            Sender: Global.CurrentApplicationAddress
             AssetReceiver: Global.CurrentApplicationAddress
             AssetAmount: 0
             XferAsset: asset_id

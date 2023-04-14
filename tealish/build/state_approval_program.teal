@@ -235,14 +235,9 @@ create_bid:
   concat
   store 5 // bid
   // fx
-  // bytes fx = Gtxn[fx_call_ix].LastLog
-  // DEBUG
-  // bytes fx = concat(itob(1), itob(1)) [slot 8]
-  pushint 1
-  itob
-  pushint 1
-  itob
-  concat
+  // bytes fx = Gtxn[fx_call_ix].LastLog [slot 8]
+  load 0 // fx_call_ix
+  gtxns LastLog
   store 8 // fx
   // bid = concat(bid, fx)
   load 5 // bid
@@ -272,7 +267,7 @@ create_bid:
   // int e = Global.GroupSize [slot 11]
   global GroupSize
   store 11 // e
-  // first 32 bytes of Txn.Note is B
+  // first 58 bytes of Txn.Note is B as string
   // bytes note = extract(59, 0, Txn.Note) [slot 12]
   txn Note
   extract 59 0
@@ -347,15 +342,6 @@ create_bid:
   sha512_256
   store 14 // bid_id
   
-  // log(Txn.Sender)
-  // log(b)
-  // log(currency_id_bytes)
-  // log(currency_amount_bytes)
-  // log(note)
-  // log(bid_id_prehash)
-  // log(bid_id)
-  // log(bid)
-  
   // create box
   // int box_existed = box_create(bid_id, len(bid)) [slot 15]
   load 14 // bid_id
@@ -380,40 +366,32 @@ create_bid:
 
 // block cancel_bid
 cancel_bid:
-  //DEBUG
-  // bytes bid_contents = Txn.ApplicationArgs[1] [slot 0]
+  // bytes bid_id = Txn.ApplicationArgs[1] [slot 0]
   txna ApplicationArgs 1
-  store 0 // bid_contents
-  // bytes bid_id = Txn.ApplicationArgs[1]
-  // int bid_exists
-  // bytes bid_contents
+  store 0 // bid_id
+  // int bid_exists [slot 1]
+  // bytes bid_contents [slot 2]
   // bid_exists, bid_contents = box_get(bid_id)
+  load 0 // bid_id
+  box_get
+  store 1 // bid_exists
+  store 2 // bid_contents
   // assert(bid_exists == 1)
-  // BidWithoutNote bid = extract3(bid_contents, 0, BIDWITHOUTNOTESIZE) [slot 1]
-  load 0 // bid_contents
+  load 1 // bid_exists
+  pushint 1
+  ==
+  assert
+  // BidWithoutNote bid = extract3(bid_contents, 0, BIDWITHOUTNOTESIZE) [slot 3]
+  load 2 // bid_contents
   pushint 0
   pushint 97 // BIDWITHOUTNOTESIZE
   extract3
-  store 1 // bid
-  
-  // _ = bid.a
-  load 1 // bid
-  extract 0 32 // a
-  pop // discarding value for _
-  // _ = bid.b
-  load 1 // bid
-  extract 32 32 // b
-  pop // discarding value for _
-  // _ = bid.currency_id
-  load 1 // bid
-  pushint 64
-  extract_uint64 // currency_id
-  pop // discarding value for _
+  store 3 // bid
   
   // only A can cancel
   // assert(Txn.Sender == bid.a)
   txn Sender
-  load 1 // bid
+  load 3 // bid
   extract 0 32 // a
   ==
   assert
@@ -424,16 +402,16 @@ cancel_bid:
     pushint 4 // Axfer
     itxn_field TypeEnum
     // AssetReceiver: bid.a
-    load 1 // bid
+    load 3 // bid
     extract 0 32 // a
     itxn_field AssetReceiver
     // AssetAmount: bid.currency_amount
-    load 1 // bid
+    load 3 // bid
     pushint 72
     extract_uint64 // currency_amount
     itxn_field AssetAmount
     // XferAsset: bid.currency_id
-    load 1 // bid
+    load 3 // bid
     pushint 64
     extract_uint64 // currency_id
     itxn_field XferAsset
@@ -458,6 +436,9 @@ cancel_bid:
   // # end
   
   // _ = box_del(bid_id)
+  load 0 // bid_id
+  box_del
+  pop // discarding value for _
   
   // exit(1)
   pushint 1
@@ -501,7 +482,6 @@ trade:
   // # TODO need multiple if note large
   // inner_txn:
   //     TypeEnum: Pay
-  //     # Sender: Global.CurrentApplicationAddress
   //     Receiver: bid.b
   //     Amount: 0
   //     Note: note
@@ -689,9 +669,6 @@ pop // discarding value for _
       // TypeEnum: Axfer
       pushint 4 // Axfer
       itxn_field TypeEnum
-      // Sender: Global.CurrentApplicationAddress
-      global CurrentApplicationAddress
-      itxn_field Sender
       // AssetReceiver: Global.CurrentApplicationAddress
       global CurrentApplicationAddress
       itxn_field AssetReceiver

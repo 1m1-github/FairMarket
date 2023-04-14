@@ -189,11 +189,7 @@ end
 
 block cancel_bid:
     bytes bid_id = Txn.ApplicationArgs[1]
-    int bid_exists
-    bytes bid_contents
-    bid_exists, bid_contents = box_get(bid_id)
-    assert(bid_exists == 1)
-    BidWithoutNote bid = extract3(bid_contents, 0, BIDWITHOUTNOTESIZE)
+    BidWithoutNote bid = get_bid(bid_id)
 
     # only A can cancel
     assert(Txn.Sender == bid.a)
@@ -226,49 +222,42 @@ block cancel_bid:
 end
 
 block trade:
-    # bytes bid_id = Txn.ApplicationArgs[1]
-    # int bid_exists
-    # bytes bid_contents
-    # bid_exists, bid_contents = box_get(bid_id)
-    # assert(bid_exists == 1)
+    bytes bid_id = Txn.ApplicationArgs[1]
+    BidWithoutNote bid = get_bid(bid_id)
 
-    # BidWithoutNote bid = extract3(bid_contents, 0, BIDWITHOUTNOTESIZE)
+    # only B can trade
+    assert(Txn.Sender == bid.b)
 
-    # assert(Txn.Sender == bid.b)
+    # send currency to owner
+    int currency_amount_for_b = bid.currency_amount
+    inner_txn:
+        TypeEnum: Axfer
+        AssetReceiver: bid.b
+        AssetAmount: currency_amount_for_b
+        XferAsset: bid.currency_id
+        Fee: 0
+    end
 
-    # # Params p = app_global_get("a")
+    # note
+    int s = Txn.GroupIndex + 1
+    int e = Global.GroupSize
+    bytes note = Txn.Note
+    for i in s:e:
+        if Gtxn[i].ApplicationArgs[0] == "add_data":
+            note = concat(note, Gtxn[i].Note)
+        end
+    end
 
-    # # # send currency to owner
-    # int currency_amount_for_b = bid.currency_amount
-    # inner_txn:
-    #     TypeEnum: Axfer
-    #     # Sender: Global.CurrentApplicationAddress
-    #     AssetReceiver: bid.b
-    #     AssetAmount: currency_amount_for_b
-    #     XferAsset: bid.currency_id
-    #     Fee: 1000
-    # end
+    # TODO need multiple if note large
+    inner_txn:
+        TypeEnum: Pay
+        Receiver: bid.a
+        Amount: 0
+        Note: note
+        Fee: 0
+    end
 
-    # # note
-    # int s = Txn.GroupIndex + 1
-    # int e = Global.GroupSize
-    # bytes note = Txn.Note
-    # for i in s:e:
-    #     if Gtxn[i].ApplicationArgs[0] == "add_data":
-    #         note = concat(note, Gtxn[i].Note)
-    #     end
-    # end
-
-    # # TODO need multiple if note large
-    # inner_txn:
-    #     TypeEnum: Pay
-    #     Receiver: bid.b
-    #     Amount: 0
-    #     Note: note
-    #     Fee: 1000
-    # end
-
-    # _ = box_del(bid_id)
+    _ = box_del(bid_id)
 
     exit(1)
 end
@@ -281,7 +270,13 @@ block add_data:
     exit(1)
 end
 
-
+func get_bid(bid_id: bytes) bytes:
+    int bid_exists
+    bytes bid_contents
+    bid_exists, bid_contents = box_get(bid_id)
+    assert(bid_exists == 1)
+    return extract3(bid_contents, 0, BIDWITHOUTNOTESIZE)
+end
 
 # TODO assert input sizes, choose m appropriately
 func calc_type(b: bytes, asset_amount: int, fx: bytes) bytes:

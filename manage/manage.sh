@@ -81,9 +81,12 @@ tealdbg debug $TEAL_DIR/$APPROVAL_FILE_NAME.teal -d $TXNS_DIR/dryrun.json --grou
 goal app call --from $A --app-id $FAIRMARKET_APP --app-arg "str:cancel_bid" --app-arg $BID_ID --box $BID_ID --foreign-asset $CURRENCY_ID --fee 2000
 
 # trade [seller]
-goal app call --from $B --app-id $FAIRMARKET_APP --foreign-asset $ASSET_ID --app-arg "str:trade" --app-arg $BID_ID --box $BID_ID --note $NOTE_0 --out $TXNS_DIR/trade_app_call.txn
-goal app call --from $BIDDER --app-id $FAIRMARKET_APP --app-arg "str:add_data" --note $NOTE_1 --out $TXNS_DIR/trade_note_extra_1.txn
-cat $TXNS_DIR/trade_app_call.txn $TXNS_DIR/trade_note_extra_1.txn > $TXNS_DIR/combined.txn
+export NOTE_2="hi "
+export NOTE_3="sky"
+goal asset optin --account $B --assetid $CURRENCY_ID --out $TXNS_DIR/trade_optin.txn
+goal app call --from $B --app-id $FAIRMARKET_APP --app-account $A --foreign-asset $CURRENCY_ID --app-arg "str:trade" --app-arg $BID_ID --box $BID_ID --note $NOTE_2 --out $TXNS_DIR/trade_app_call.txn --fee 3000
+goal app call --from $B --app-id $FAIRMARKET_APP --app-arg "str:add_data" --note $NOTE_3 --out $TXNS_DIR/trade_note_extra_1.txn
+cat $TXNS_DIR/trade_optin.txn $TXNS_DIR/trade_app_call.txn $TXNS_DIR/trade_note_extra_1.txn > $TXNS_DIR/combined.txn
 goal clerk group --infile $TXNS_DIR/combined.txn --outfile $TXNS_DIR/trade.txn
 goal clerk sign --infile $TXNS_DIR/trade.txn --outfile $TXNS_DIR/trade.stxn
 goal clerk rawsend --filename $TXNS_DIR/trade.stxn

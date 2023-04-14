@@ -45,6 +45,7 @@ struct BidWithoutNote:
 end
 
 const int FX_APP = 178969021
+# const int SYSTEM_ACCOUNT = 
 
 # api
 # create bid [bidder]
@@ -143,6 +144,7 @@ block main:
         "update_params": update_params
         "create_bid": create_bid
         "cancel_bid": cancel_bid
+        "trade": trade
         "add_data": add_data
     end
 end
@@ -193,8 +195,6 @@ block create_bid:
     assert(box_existed == 1)
     box_replace(box_name, 0, box_content)
 
-
-
     exit(1)
 end
 
@@ -237,6 +237,36 @@ block cancel_bid:
     exit(1)
 end
 
+block trade:
+    # Params p = app_global_get("a")
+
+    # # send currency to owner
+    # inner_txn:
+    #     TypeEnum: Axfer
+    #     Sender: Global.CurrentApplicationAddress
+    #     AssetReceiver: p.owner
+    #     AssetAmount: amount_for_owner
+    #     XferAsset: bid.currency_id
+    #     Fee: 0
+    # end
+
+    # # send currency to system
+    # if 0 < amount_for_system:
+    #     inner_txn:
+    #         TypeEnum: Axfer
+    #         Sender: Global.CurrentApplicationAddress
+    #         AssetReceiver: SYSTEM_ACCOUNT
+    #         AssetAmount: amount_for_system
+    #         XferAsset: bid.currency_id
+    #         Fee: 0
+    #     end
+    # end
+
+    # _ = box_del(box_name)
+
+    exit(1)
+end
+
 block add_data:
     exit(1)
 end
@@ -254,12 +284,11 @@ end
 # TODO assert input sizes, choose m appropriately
 func calc_type(asset_amount: int, fx: bytes) bytes:
 
-    int fx_n = extract_uint64(fx, 0)
     int fx_d = extract_uint64(fx, 8)
-
-    if fx_n == 0 && fx_d == 0:
+    if fx_d == 0:
         return "S"
     end
+    int fx_n = extract_uint64(fx, 0)
 
     int m = 10000
 

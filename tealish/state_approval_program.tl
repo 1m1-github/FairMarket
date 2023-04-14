@@ -164,9 +164,10 @@ block create_bid:
 
     # calc bid_id
     # BID_ID = hash($A$B$CURRENCY_ID$CURRENCY_AMOUNT$NOTE)
-    bytes bid_id_prehash = concat(Txn.Sender, b)
-    bid_id_prehash = concat(bid_id_prehash, currency_id)
-    bid_id_prehash = concat(bid_id_prehash, currency_amount)
+    bytes bid_id_prehash
+    bid_id_prehash = concat(Txn.Sender, b)
+    bid_id_prehash = concat(bid_id_prehash, currency_id_bytes)
+    bid_id_prehash = concat(bid_id_prehash, currency_amount_bytes)
     bid_id_prehash = concat(bid_id_prehash, note)
     bytes bid_id = sha512_256(bid_id_prehash)
 
@@ -288,10 +289,13 @@ func calc_type(b: bytes, asset_amount: int, fx: bytes) bytes:
     int m = 10000
 
     Params p = get_params(b)
+
+    int min_precision_n = app_global_get("mn")
+    int min_precision_d = app_global_get("md")
     
     int currency_quantity_after_fx = (m * (asset_amount * fx_n)) / fx_d
-    int chrony_upper_bound = p.min * (m + ((m * p.min_precision_n) / p.min_precision_d))
-    int chrony_lower_bound = p.min * (m - ((m * p.min_precision_n) / p.min_precision_d))
+    int chrony_upper_bound = p.min * (m + ((m * min_precision_n) / min_precision_d))
+    int chrony_lower_bound = p.min * (m - ((m * min_precision_n) / min_precision_d))
 
     if currency_quantity_after_fx == 0:
         if chrony_lower_bound == 0:
@@ -348,12 +352,12 @@ end
 #     return
 # end
 
-func get_params(b: bytes) Params:
-    Params p
+func get_params(b: bytes) bytes:
+    bytes p
     int p_exists
-    p, p_exists = box_get(b)
-    if p_exists == 0:
-        Params p = "1111"
+    p_exists, p = box_get(b)
+    if p_exists == 1:
+        return p
     end
-    return p
+    return "1111"
 end

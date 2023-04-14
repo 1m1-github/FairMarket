@@ -17,7 +17,7 @@
 
 // size=4*8+32+256=320
 
-// size=32+4*8+1=65
+// size=2*32+4*8+1=97
 
 
 // api
@@ -195,14 +195,8 @@ create_bid:
   // int asset_send_ix = 3 [slot 3]
   pushint 3
   store 3 // asset_send_ix
-  // int e = Global.GroupSize-1
   
   // check_create_bid(asset_send_ix, fx_call_ix, app_call_ix, algo_send_ix)
-  load 3 // asset_send_ix
-  load 0 // fx_call_ix
-  load 2 // app_call_ix
-  load 1 // algo_send_ix
-  callsub __func__check_create_bid
   
   // opt_in(Gtxn[asset_send_ix].XferAsset)
   load 3 // asset_send_ix
@@ -210,124 +204,155 @@ create_bid:
   callsub __func__opt_in
   
   // box_content
-  // parent
-  // assert(len(Txn.ApplicationArgs[1]) == 32)
-  txna ApplicationArgs 1
-  len
-  pushint 32
-  ==
-  assert
-  // bytes box_content = Txn.ApplicationArgs[1] [slot 4]
-  txna ApplicationArgs 1
-  store 4 // box_content
-  // owner
-  // box_content = concat(box_content, Txn.Sender)
-  load 4 // box_content
+  // A, b = B
+  // bytes b = extract(0, 32, Txn.Note) [slot 4]
+  txn Note
+  extract 0 32
+  store 4 // b
+  // bytes bid = concat(Txn.Sender, b) [slot 5]
   txn Sender
+  load 4 // b
   concat
-  store 4 // box_content
-  // fairmarket
-  // assert(len(Txn.ApplicationArgs[2]) == 8)
-  txna ApplicationArgs 2
-  len
-  pushint 8
-  ==
-  assert
-  // box_content = concat(box_content, Txn.ApplicationArgs[2])
-  load 4 // box_content
-  txna ApplicationArgs 2
-  concat
-  store 4 // box_content
+  store 5 // bid
   // currency_id
-  // box_content = concat(box_content, itob(Gtxn[asset_send_ix].XferAsset))
-  load 4 // box_content
+  // bytes currency_id_bytes = itob(Gtxn[asset_send_ix].XferAsset) [slot 6]
   load 3 // asset_send_ix
   gtxns XferAsset
   itob
+  store 6 // currency_id_bytes
+  // bid = concat(bid, currency_id_bytes)
+  load 5 // bid
+  load 6 // currency_id_bytes
   concat
-  store 4 // box_content
-  // currency_quantity
-  // box_content = concat(box_content, itob(Gtxn[asset_send_ix].AssetAmount))
-  load 4 // box_content
+  store 5 // bid
+  // currency_amount
+  // bytes currency_amount_bytes = itob(Gtxn[asset_send_ix].AssetAmount) [slot 7]
   load 3 // asset_send_ix
   gtxns AssetAmount
   itob
+  store 7 // currency_amount_bytes
+  // bid = concat(bid, currency_amount_bytes)
+  load 5 // bid
+  load 7 // currency_amount_bytes
   concat
-  store 4 // box_content
-  // bytes fx = Gtxn[fx_call_ix].LastLog [slot 5]
+  store 5 // bid
+  // fx
+  // bytes fx = Gtxn[fx_call_ix].LastLog [slot 8]
   load 0 // fx_call_ix
   gtxns LastLog
-  store 5 // fx
-  // box_content = concat(box_content, fx)
-  load 4 // box_content
-  load 5 // fx
+  store 8 // fx
+  // bid = concat(bid, fx)
+  load 5 // bid
+  load 8 // fx
   concat
-  store 4 // box_content
-  // bytes type = calc_type(Gtxn[asset_send_ix].AssetAmount, fx) [slot 6]
+  store 5 // bid
+  // type
+  // bytes type = calc_type(Gtxn[asset_send_ix].AssetAmount, fx) [slot 9]
   load 3 // asset_send_ix
   gtxns AssetAmount
-  load 5 // fx
+  load 8 // fx
   callsub __func__calc_type
-  store 6 // type
-  // box_content = concat(box_content, type)
-  load 4 // box_content
-  load 6 // type
+  store 9 // type
+  // bid = concat(bid, type)
+  load 5 // bid
+  load 9 // type
   concat
-  store 4 // box_content
-  // BidWithoutNote bidWithoutNote = box_content [slot 7]
-  load 4 // box_content
-  store 7 // bidWithoutNote
+  store 5 // bid
   
-  // int e = Global.GroupSize-1 [slot 8]
+  // note
+  // int s = Txn.GroupIndex + 1 [slot 10]
+  txn GroupIndex
+  pushint 1
+  +
+  store 10 // s
+  // int e = Global.GroupSize - 1 [slot 11]
   global GroupSize
   pushint 1
   -
-  store 8 // e
-  // for i in 0:e:
-    pushint 0
-    store 9 // i
+  store 11 // e
+  // first 32 bytes of Txn.Note is B
+  // bytes note = extract(33, 0, Txn.Note) [slot 12]
+  txn Note
+  extract 33 0
+  store 12 // note
+  // for i in s:e:
+    load 10 // s
+    store 13 // i
     l2_for:
-    load 9 // i
-    load 8 // e
+    load 13 // i
+    load 11 // e
     ==
     bnz l2_end
-    // box_content = concat(box_content, Gtxn[i].Note)
-    load 4 // box_content
-    load 9 // i
-    gtxns Note
-    concat
-    store 4 // box_content
-    load 9 // i
+    // if Gtxn[i].ApplicationArgs[0] == "add_data":
+      load 13 // i
+      gtxnsa ApplicationArgs 0
+      pushbytes "add_data"
+      ==
+      bz l3_end
+      // then:
+        // note = concat(note, Gtxn[i].Note)
+        load 12 // note
+        load 13 // i
+        gtxns Note
+        concat
+        store 12 // note
+      l3_end: // end
+    load 13 // i
     pushint 1
     +
-    store 9 // i
+    store 13 // i
     b l2_for
     l2_end: // end
+  // bid = concat(bid, note)
+  load 5 // bid
+  load 12 // note
+  concat
+  store 5 // bid
   
-  // bytes box_name = Txn.ApplicationArgs[3] [slot 9]
-  txna ApplicationArgs 3
-  store 9 // box_name
-  // assert(len(box_name) == 32)
-  load 9 // box_name
-  len
-  pushint 32
-  ==
-  assert
-  // int box_existed = box_create(box_name, len(box_content)) [slot 10]
-  load 9 // box_name
-  load 4 // box_content
+  // calc bid_id
+  // BID_ID = hash($A$B$CURRENCY_ID$CURRENCY_AMOUNT$NOTE)
+  // bytes bid_id_prehash [slot 13]
+  // bid_id_prehash = concat(Txn.Sender, b)
+  txn Sender
+  load 4 // b
+  concat
+  store 13 // bid_id_prehash
+  // bid_id_prehash = concat(bid_id_prehash, currency_id_bytes)
+  load 13 // bid_id_prehash
+  load 6 // currency_id_bytes
+  concat
+  store 13 // bid_id_prehash
+  // bid_id_prehash = concat(bid_id_prehash, currency_amount_bytes)
+  load 13 // bid_id_prehash
+  load 7 // currency_amount_bytes
+  concat
+  store 13 // bid_id_prehash
+  // bid_id_prehash = concat(bid_id_prehash, note)
+  load 13 // bid_id_prehash
+  load 12 // note
+  concat
+  store 13 // bid_id_prehash
+  // bytes bid_id = sha512_256(bid_id_prehash) [slot 14]
+  load 13 // bid_id_prehash
+  sha512_256
+  store 14 // bid_id
+  
+  // create box
+  // int box_existed = box_create(bid_id, len(bid)) [slot 15]
+  load 14 // bid_id
+  load 5 // bid
   len
   box_create
-  store 10 // box_existed
+  store 15 // box_existed
   // assert(box_existed == 1)
-  load 10 // box_existed
+  load 15 // box_existed
   pushint 1
   ==
   assert
-  // box_replace(box_name, 0, box_content)
-  load 9 // box_name
+  // box_replace(bid_id, 0, bid)
+  load 14 // bid_id
   pushint 0
-  load 4 // box_content
+  load 5 // bid
   box_replace
   
   // exit(1)
@@ -336,24 +361,59 @@ create_bid:
 
 // block cancel_bid
 cancel_bid:
-  // bytes box_name = Txn.ApplicationArgs[1]
-  // int box_exists
-  // bytes box_contents
-  // box_exists, box_contents = box_get(box_name)
-  // assert(box_exists == 1)
+  // bytes bid_id = Txn.ApplicationArgs[1] [slot 0]
+  txna ApplicationArgs 1
+  store 0 // bid_id
+  // int bid_exists [slot 1]
+  // bytes bid_contents [slot 2]
+  // bid_exists, bid_contents = box_get(bid_id)
+  load 0 // bid_id
+  box_get
+  store 1 // bid_exists
+  store 2 // bid_contents
+  // assert(bid_exists == 1)
+  load 1 // bid_exists
+  pushint 1
+  ==
+  assert
   
-  // BidWithoutNote bid = substring(0, 105, box_contents)
+  // BidWithoutNote bid = extract(0, BIDWITHOUTNOTESIZE, bid_contents) [slot 3]
+  load 2 // bid_contents
+  extract 0 BIDWITHOUTNOTESIZE
+  store 3 // bid
   
-  // assert(Txn.Sender == bid.owner)
+  // only A can cancel
+  // assert(Txn.Sender == bid.a)
+  txn Sender
+  load 3 // bid
+  extract 0 32 // a
+  ==
+  assert
   
   // inner_txn:
-  //     TypeEnum: Axfer
-  //     Sender: Global.CurrentApplicationAddress
-  //     AssetReceiver: bid.owner
-  //     AssetAmount: bid.currency_quantity
-  //     XferAsset: bid.currency_id
-  //     Fee: 0
-  // end
+  itxn_begin
+    // TypeEnum: Axfer
+    pushint 4 // Axfer
+    itxn_field TypeEnum
+    // AssetReceiver: bid.a
+    load 3 // bid
+    extract 0 32 // a
+    itxn_field AssetReceiver
+    // AssetAmount: bid.currency_amount
+    load 3 // bid
+    pushint 72
+    extract_uint64 // currency_amount
+    itxn_field AssetAmount
+    // XferAsset: bid.currency_id
+    load 3 // bid
+    pushint 64
+    extract_uint64 // currency_id
+    itxn_field XferAsset
+    // Fee: 0
+    pushint 0
+    itxn_field Fee
+  itxn_submit
+  // end inner_txn
   
   // # # opt-out if no balance? TODO (e.g. return subj currency reserve)
   // # int currency_balance
@@ -369,7 +429,10 @@ cancel_bid:
   // #     end
   // # end
   
-  // _ = box_del(box_name)
+  // _ = box_del(bid_id)
+  load 0 // bid_id
+  box_del
+  pop // discarding value for _
   
   // exit(1)
   pushint 1
@@ -377,31 +440,134 @@ cancel_bid:
 
 // block trade
 trade:
+  // bytes bid_id = Txn.ApplicationArgs[1] [slot 0]
+  txna ApplicationArgs 1
+  store 0 // bid_id
+  // int bid_exists [slot 1]
+  // bytes bid_contents [slot 2]
+  // bid_exists, bid_contents = box_get(bid_id)
+  load 0 // bid_id
+  box_get
+  store 1 // bid_exists
+  store 2 // bid_contents
+  // assert(bid_exists == 1)
+  load 1 // bid_exists
+  pushint 1
+  ==
+  assert
+  
+  // BidWithoutNote bid = extract(0, BIDWITHOUTNOTESIZE, bid_contents) [slot 3]
+  load 2 // bid_contents
+  extract 0 BIDWITHOUTNOTESIZE
+  store 3 // bid
+  
+  // assert(Txn.Sender == bid.b)
+  txn Sender
+  load 3 // bid
+  extract 32 32 // b
+  ==
+  assert
+  
   // Params p = app_global_get("a")
   
   // # send currency to owner
+  // int currency_amount_for_b = bid.currency_amount [slot 4]
+  load 3 // bid
+  pushint 72
+  extract_uint64 // currency_amount
+  store 4 // currency_amount_for_b
   // inner_txn:
-  //     TypeEnum: Axfer
-  //     Sender: Global.CurrentApplicationAddress
-  //     AssetReceiver: p.owner
-  //     AssetAmount: amount_for_owner
-  //     XferAsset: bid.currency_id
-  //     Fee: 0
-  // end
+  itxn_begin
+    // TypeEnum: Axfer
+    pushint 4 // Axfer
+    itxn_field TypeEnum
+    // AssetReceiver: bid.b
+    load 3 // bid
+    extract 32 32 // b
+    itxn_field AssetReceiver
+    // AssetAmount: currency_amount_for_b
+    load 4 // currency_amount_for_b
+    itxn_field AssetAmount
+    // XferAsset: bid.currency_id
+    load 3 // bid
+    pushint 64
+    extract_uint64 // currency_id
+    itxn_field XferAsset
+    // Fee: 1000
+    pushint 1000
+    itxn_field Fee
+  itxn_submit
+  // end inner_txn
   
-  // # send currency to system
-  // if 0 < amount_for_system:
-  //     inner_txn:
-  //         TypeEnum: Axfer
-  //         Sender: Global.CurrentApplicationAddress
-  //         AssetReceiver: SYSTEM_ACCOUNT
-  //         AssetAmount: amount_for_system
-  //         XferAsset: bid.currency_id
-  //         Fee: 0
-  //     end
-  // end
+  // note
+  // int s = Txn.GroupIndex + 1 [slot 5]
+  txn GroupIndex
+  pushint 1
+  +
+  store 5 // s
+  // int e = Global.GroupSize - 1 [slot 6]
+  global GroupSize
+  pushint 1
+  -
+  store 6 // e
+  // bytes note = Txn.Note [slot 7]
+  txn Note
+  store 7 // note
+  // for i in s:e:
+    load 5 // s
+    store 8 // i
+    l4_for:
+    load 8 // i
+    load 6 // e
+    ==
+    bnz l4_end
+    // if Gtxn[i].ApplicationArgs[0] == "add_data":
+      load 8 // i
+      gtxnsa ApplicationArgs 0
+      pushbytes "add_data"
+      ==
+      bz l5_end
+      // then:
+        // note = concat(note, Gtxn[i].Note)
+        load 7 // note
+        load 8 // i
+        gtxns Note
+        concat
+        store 7 // note
+      l5_end: // end
+    load 8 // i
+    pushint 1
+    +
+    store 8 // i
+    b l4_for
+    l4_end: // end
   
-  // _ = box_del(box_name)
+  // TODO need multiple if note large
+  // inner_txn:
+  itxn_begin
+    // TypeEnum: Pay
+    pushint 1 // Pay
+    itxn_field TypeEnum
+    // Receiver: bid.b
+    load 3 // bid
+    extract 32 32 // b
+    itxn_field Receiver
+    // Amount: 0
+    pushint 0
+    itxn_field Amount
+    // Note: note
+    load 7 // note
+    itxn_field Note
+    // Fee: 1000
+    pushint 1000
+    itxn_field Fee
+  itxn_submit
+  // end inner_txn
+  
+  // _ = box_del(bid_id)
+  load 0 // bid_id
+  box_del
+  pop // discarding value for _
   
   // exit(1)
   pushint 1
@@ -409,8 +575,6 @@ trade:
 
 // block update_params
 update_params:
-  
-  
   // exit(1)
   pushint 1
   return
@@ -421,45 +585,139 @@ add_data:
   pushint 1
   return
 
-// func default_params() Params:
-__func__default_params:
-// return
-retsub
+
 
 // TODO assert input sizes, choose m appropriately
-// func calc_type(asset_amount: int, fx: bytes) bytes:
+// func calc_type(b: bytes, asset_amount: int, fx: bytes) bytes:
 __func__calc_type:
-store 11 // fx
-store 12 // asset_amount
-
-// int fx_d = extract_uint64(fx, 8)
+store 16 // fx
+store 17 // asset_amount
+store 18 // b
+// int fx_d = extract_uint64(fx, 8) [slot 19]
+load 16 // fx
+pushint 8
+extract_uint64
+store 19 // fx_d
 // if fx_d == 0:
-//     return "S"
-// end
-// int fx_n = extract_uint64(fx, 0)
+  load 19 // fx_d
+  pushint 0
+  ==
+  bz l6_end
+  // then:
+    // return "S"
+    pushbytes "S"
+    retsub
+  l6_end: // end
+// int fx_n = extract_uint64(fx, 0) [slot 20]
+load 16 // fx
+pushint 0
+extract_uint64
+store 20 // fx_n
 
-// int m = 10000
+// int m = 10000 [slot 21]
+pushint 10000
+store 21 // m
 
-// Params p = app_global_get("a")
+// Params p = get_params(b) [slot 22]
+load 18 // b
+callsub __func__get_params
+store 22 // p
 
-// int currency_quantity_after_fx = (m * (asset_amount * fx_n)) / fx_d
-// int chrony_upper_bound = p.min * (m + ((m * p.min_precision_n) / p.min_precision_d))
-// int chrony_lower_bound = p.min * (m - ((m * p.min_precision_n) / p.min_precision_d))
+// int min_precision_n = app_global_get("mn") [slot 23]
+pushbytes "mn"
+app_global_get
+store 23 // min_precision_n
+// int min_precision_d = app_global_get("md") [slot 24]
+pushbytes "md"
+app_global_get
+store 24 // min_precision_d
+
+// int currency_quantity_after_fx = (m * (asset_amount * fx_n)) / fx_d [slot 25]
+load 21 // m
+load 17 // asset_amount
+load 20 // fx_n
+*
+*
+load 19 // fx_d
+/
+store 25 // currency_quantity_after_fx
+// int chrony_upper_bound = p.min * (m + ((m * min_precision_n) / min_precision_d)) [slot 26]
+load 22 // p
+pushint 24
+extract_uint64 // min
+load 21 // m
+load 21 // m
+load 23 // min_precision_n
+*
+load 24 // min_precision_d
+/
++
+*
+store 26 // chrony_upper_bound
+// int chrony_lower_bound = p.min * (m - ((m * min_precision_n) / min_precision_d)) [slot 27]
+load 22 // p
+pushint 24
+extract_uint64 // min
+load 21 // m
+load 21 // m
+load 23 // min_precision_n
+*
+load 24 // min_precision_d
+/
+-
+*
+store 27 // chrony_lower_bound
 
 // if currency_quantity_after_fx == 0:
-//     if chrony_lower_bound == 0:
-//         return "L"
-//     else:
-//         # 0 lurker with 0<min is a spammer
-//         exit(0)
-//     end
-// elif currency_quantity_after_fx < chrony_lower_bound:
-//     return "L"
-// elif chrony_upper_bound < currency_quantity_after_fx:
-//     return "H"
-// else:
-//     return "C"
-// end
+  load 25 // currency_quantity_after_fx
+  pushint 0
+  ==
+  bz l7_elif_0
+  // then:
+    // if chrony_lower_bound == 0:
+      load 27 // chrony_lower_bound
+      pushint 0
+      ==
+      bz l8_else
+      // then:
+        // return "L"
+        pushbytes "L"
+        retsub
+      b l8_end
+      l8_else:
+      // else:
+        // 0 lurker with 0<min is a spammer
+        // exit(0)
+        pushint 0
+        return
+      l8_end: // end
+  b l7_end
+  l7_elif_0:
+  // elif currency_quantity_after_fx < chrony_lower_bound:
+  load 25 // currency_quantity_after_fx
+  load 27 // chrony_lower_bound
+  <
+  bz l7_elif_1
+    // return "L"
+    pushbytes "L"
+    retsub
+  b l7_end
+  l7_elif_1:
+  // elif chrony_upper_bound < currency_quantity_after_fx:
+  load 26 // chrony_upper_bound
+  load 25 // currency_quantity_after_fx
+  <
+  bz l7_else
+    // return "H"
+    pushbytes "H"
+    retsub
+  b l7_end
+  l7_else:
+  // else:
+    // return "C"
+    pushbytes "C"
+    retsub
+  l7_end: // end
 
 // should never reach here
 // exit(0)
@@ -471,19 +729,19 @@ retsub
 
 // func opt_in(asset_id: int):
 __func__opt_in:
-store 13 // asset_id
-// int is_opted_in [slot 14]
+store 28 // asset_id
+// int is_opted_in [slot 29]
 // is_opted_in, _ = asset_holding_get(AssetBalance, Global.CurrentApplicationAddress, asset_id)
 global CurrentApplicationAddress
-load 13 // asset_id
+load 28 // asset_id
 asset_holding_get AssetBalance
-store 14 // is_opted_in
+store 29 // is_opted_in
 pop // discarding value for _
 // if is_opted_in == 0:
-  load 14 // is_opted_in
+  load 29 // is_opted_in
   pushint 0
   ==
-  bz l3_end
+  bz l9_end
   // then:
     // inner_txn:
     itxn_begin
@@ -500,115 +758,56 @@ pop // discarding value for _
       pushint 0
       itxn_field AssetAmount
       // XferAsset: asset_id
-      load 13 // asset_id
+      load 28 // asset_id
       itxn_field XferAsset
       // Fee: 0
       pushint 0
       itxn_field Fee
     itxn_submit
     // end inner_txn
-  l3_end: // end
+  l9_end: // end
 // return
 retsub
 
 // func check_create_bid(asset_send_ix: int, fx_call_ix: int, app_call_ix: int, algo_send_ix: int):
-__func__check_create_bid:
-store 15 // algo_send_ix
-store 16 // app_call_ix
-store 17 // fx_call_ix
-store 18 // asset_send_ix
-// assert(Gtxn[asset_send_ix].TypeEnum == Axfer)
-load 18 // asset_send_ix
-gtxns TypeEnum
-pushint 4 // Axfer
-==
-assert
-// assert(Gtxn[asset_send_ix].AssetReceiver == Global.CurrentApplicationAddress)
-load 18 // asset_send_ix
-gtxns AssetReceiver
-global CurrentApplicationAddress
-==
-assert
-// assert(Gtxn[fx_call_ix].TypeEnum == Appl)
-load 17 // fx_call_ix
-gtxns TypeEnum
-pushint 6 // Appl
-==
-assert
-// assert(Gtxn[fx_call_ix].Sender == Gtxn[asset_send_ix].Sender)
-load 17 // fx_call_ix
-gtxns Sender
-load 18 // asset_send_ix
-gtxns Sender
-==
-assert
-// assert(Gtxn[fx_call_ix].ApplicationID == FX_APP)
-load 17 // fx_call_ix
-gtxns ApplicationID
-pushint 178969021 // FX_APP
-==
-assert
-// assert(Gtxn[asset_send_ix].XferAsset == Gtxn[fx_call_ix].Assets[0])
-load 18 // asset_send_ix
-gtxns XferAsset
-load 17 // fx_call_ix
-gtxnsa Assets 0
-==
-assert
-// assert(Txn.GroupIndex == app_call_ix)
-txn GroupIndex
-load 16 // app_call_ix
-==
-assert
-// assert(Txn.Sender == Gtxn[asset_send_ix].Sender)
-txn Sender
-load 18 // asset_send_ix
-gtxns Sender
-==
-assert
-// assert(Gtxn[algo_send_ix].TypeEnum == Pay)
-load 15 // algo_send_ix
-gtxns TypeEnum
-pushint 1 // Pay
-==
-assert
-// assert(Gtxn[algo_send_ix].Sender == Gtxn[asset_send_ix].Sender)
-load 15 // algo_send_ix
-gtxns Sender
-load 18 // asset_send_ix
-gtxns Sender
-==
-assert
-// assert(Gtxn[algo_send_ix].Receiver == Global.CurrentApplicationAddress)
-load 15 // algo_send_ix
-gtxns Receiver
-global CurrentApplicationAddress
-==
-assert
-// int e = Global.GroupSize - 1 [slot 19]
-global GroupSize
-pushint 1
--
-store 19 // e
-// for i in 4:e:
-  pushint 4
-  store 20 // i
-  l4_for:
-  load 20 // i
-  load 19 // e
-  ==
-  bnz l4_end
-  // assert(Gtxn[i].TypeEnum == Appl)
-  load 20 // i
-  gtxns TypeEnum
-  pushint 6 // Appl
-  ==
-  assert
-  load 20 // i
+//     assert(Gtxn[asset_send_ix].TypeEnum == Axfer)
+//     assert(Gtxn[asset_send_ix].AssetReceiver == Global.CurrentApplicationAddress)
+//     assert(Gtxn[fx_call_ix].TypeEnum == Appl)
+//     assert(Gtxn[fx_call_ix].Sender == Gtxn[asset_send_ix].Sender)
+//     assert(Gtxn[fx_call_ix].ApplicationID == FX_APP)
+//     assert(Gtxn[asset_send_ix].XferAsset == Gtxn[fx_call_ix].Assets[0])
+//     assert(Txn.GroupIndex == app_call_ix)
+//     assert(Txn.Sender == Gtxn[asset_send_ix].Sender)
+//     assert(Gtxn[algo_send_ix].TypeEnum == Pay)
+//     assert(Gtxn[algo_send_ix].Sender == Gtxn[asset_send_ix].Sender)
+//     assert(Gtxn[algo_send_ix].Receiver == Global.CurrentApplicationAddress)
+//     int e = Global.GroupSize - 1
+//     for i in 4:e:
+//         assert(Gtxn[i].TypeEnum == Appl)
+//     end
+//     return
+// end
+
+// func get_params(b: bytes) bytes:
+__func__get_params:
+store 30 // b
+// bytes p [slot 31]
+// int p_exists [slot 32]
+// p_exists, p = box_get(b)
+load 30 // b
+box_get
+store 32 // p_exists
+store 31 // p
+// if p_exists == 1:
+  load 32 // p_exists
   pushint 1
-  +
-  store 20 // i
-  b l4_for
-  l4_end: // end
-// return
+  ==
+  bz l10_end
+  // then:
+    // return p
+    load 31 // p
+    retsub
+  l10_end: // end
+// return "1111"
+pushbytes "1111"
 retsub

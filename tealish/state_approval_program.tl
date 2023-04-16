@@ -179,6 +179,14 @@ block create_bid:
     bid_id_prehash = concat(bid_id_prehash, note)
     bytes bid_id = sha512_256(bid_id_prehash)
 
+    # log(Txn.Sender)
+    # log(b)
+    # log(currency_id_bytes)
+    # log(currency_amount_bytes)
+    # log(note)
+    # log(bid_id_prehash)
+    # log(bid_id)
+
     # create box
     int box_existed = box_create(bid_id, len(bid))
     assert(box_existed == 1)

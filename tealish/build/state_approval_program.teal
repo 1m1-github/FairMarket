@@ -353,6 +353,14 @@ create_bid:
   sha512_256
   store 15 // bid_id
   
+  // log(Txn.Sender)
+  // log(b)
+  // log(currency_id_bytes)
+  // log(currency_amount_bytes)
+  // log(note)
+  // log(bid_id_prehash)
+  // log(bid_id)
+  
   // create box
   // int box_existed = box_create(bid_id, len(bid)) [slot 16]
   load 15 // bid_id

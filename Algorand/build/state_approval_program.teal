@@ -13,7 +13,6 @@
 // central smart contract
 // default params
 // box with user name contains own params (updatable)
-// box with hash(ABNoteCurrency) is bid
 
 // size=4*8+2*32=96
 
@@ -244,88 +243,89 @@ create_bid:
   load 8 // fx
   concat
   store 5 // bid
+  
+  // time
+  // bytes time_bytes = itob(Global.LatestTimestamp) [slot 9]
+  global LatestTimestamp
+  itob
+  store 9 // time_bytes
+  // bid = concat(bid, time_bytes)
+  load 5 // bid
+  load 9 // time_bytes
+  concat
+  store 5 // bid
+  
+  // params
+  // Params p = get_params(b) [slot 10]
+  load 4 // b
+  callsub __func__get_params
+  store 10 // p
+  // bytes chrony_importance_bytes = itob(p.chrony_importance) [slot 11]
+  load 10 // p
+  pushint 104
+  extract_uint64 // chrony_importance
+  itob
+  store 11 // chrony_importance_bytes
+  // bid = concat(bid, chrony_importance_bytes)
+  load 5 // bid
+  load 11 // chrony_importance_bytes
+  concat
+  store 5 // bid
+  // bytes highroller_importance_bytes = itob(p.highroller_importance) [slot 12]
+  load 10 // p
+  pushint 112
+  extract_uint64 // highroller_importance
+  itob
+  store 12 // highroller_importance_bytes
+  // bid = concat(bid, highroller_importance_bytes)
+  load 5 // bid
+  load 12 // highroller_importance_bytes
+  concat
+  store 5 // bid
+  // bytes subjective_importance_bytes = itob(p.subjective_importance) [slot 13]
+  load 10 // p
+  pushint 120
+  extract_uint64 // subjective_importance
+  itob
+  store 13 // subjective_importance_bytes
+  // bid = concat(bid, subjective_importance_bytes)
+  load 5 // bid
+  load 13 // subjective_importance_bytes
+  concat
+  store 5 // bid
+  // bytes min_bytes = itob(p.min) [slot 14]
+  load 10 // p
+  pushint 128
+  extract_uint64 // min
+  itob
+  store 14 // min_bytes
+  // bid = concat(bid, min_bytes)
+  load 5 // bid
+  load 14 // min_bytes
+  concat
+  store 5 // bid
+  // bid = concat(bid, p.encryption_public_key)
+  load 5 // bid
+  load 10 // p
+  extract 136 32 // encryption_public_key
+  concat
+  store 5 // bid
+  
   // type
-  // bytes type = calc_type(b, Gtxn[asset_send_ix].AssetAmount, fx) [slot 9]
+  // bytes type = calc_type(b, Gtxn[asset_send_ix].AssetAmount, fx) [slot 15]
   load 4 // b
   load 3 // asset_send_ix
   gtxns AssetAmount
   load 8 // fx
   callsub __func__calc_type
-  store 9 // type
+  store 15 // type
   // bid = concat(bid, type)
   load 5 // bid
-  load 9 // type
+  load 15 // type
   concat
   store 5 // bid
   
-  // time
-  // bytes time_bytes = itob(Global.LatestTimestamp) [slot 10]
-  global LatestTimestamp
-  itob
-  store 10 // time_bytes
-  // bid = concat(bid, time_bytes)
-  load 5 // bid
-  load 10 // time_bytes
-  concat
-  store 5 // bid
-  
-  // params
-  // Params p = get_params(b) [slot 11]
-  load 4 // b
-  callsub __func__get_params
-  store 11 // p
-  // bytes chrony_importance_bytes = itob(p.chrony_importance) [slot 12]
-  load 11 // p
-  pushint 105
-  extract_uint64 // chrony_importance
-  itob
-  store 12 // chrony_importance_bytes
-  // bid = concat(bid, chrony_importance_bytes)
-  load 5 // bid
-  load 12 // chrony_importance_bytes
-  concat
-  store 5 // bid
-  // bytes highroller_importance_bytes = itob(p.highroller_importance) [slot 13]
-  load 11 // p
-  pushint 113
-  extract_uint64 // highroller_importance
-  itob
-  store 13 // highroller_importance_bytes
-  // bid = concat(bid, highroller_importance_bytes)
-  load 5 // bid
-  load 13 // highroller_importance_bytes
-  concat
-  store 5 // bid
-  // bytes subjective_importance_bytes = itob(p.subjective_importance) [slot 14]
-  load 11 // p
-  pushint 121
-  extract_uint64 // subjective_importance
-  itob
-  store 14 // subjective_importance_bytes
-  // bid = concat(bid, subjective_importance_bytes)
-  load 5 // bid
-  load 14 // subjective_importance_bytes
-  concat
-  store 5 // bid
-  // bytes min_bytes = itob(p.min) [slot 15]
-  load 11 // p
-  pushint 129
-  extract_uint64 // min
-  itob
-  store 15 // min_bytes
-  // bid = concat(bid, min_bytes)
-  load 5 // bid
-  load 15 // min_bytes
-  concat
-  store 5 // bid
-  // bid = concat(bid, p.encryption)
-  load 5 // bid
-  load 11 // p
-  extract 137 32 // encryption
-  concat
-  store 5 // bid
-  
-  // note
+  // data
   // int s = Txn.GroupIndex + 1 [slot 16]
   txn GroupIndex
   pushint 1
@@ -335,10 +335,10 @@ create_bid:
   global GroupSize
   store 17 // e
   // first 58 bytes of Txn.Note is B as string
-  // bytes note = extract(59, 0, Txn.Note) [slot 18]
+  // bytes data = extract(59, 0, Txn.Note) [slot 18]
   txn Note
   extract 59 0
-  store 18 // note
+  store 18 // data
   // for i in s:e:
     load 16 // s
     store 19 // i
@@ -361,12 +361,12 @@ create_bid:
           ==
           bz l4_end
           // then:
-            // note = concat(note, Gtxn[i].Note)
-            load 18 // note
+            // data = concat(data, Gtxn[i].Note)
+            load 18 // data
             load 19 // i
             gtxns Note
             concat
-            store 18 // note
+            store 18 // data
           l4_end: // end
       l3_end: // end
     load 19 // i
@@ -375,14 +375,14 @@ create_bid:
     store 19 // i
     b l2_for
     l2_end: // end
-  // bid = concat(bid, note)
+  // bid = concat(bid, data)
   load 5 // bid
-  load 18 // note
+  load 18 // data
   concat
   store 5 // bid
   
   // calc bid_id
-  // BID_ID = hash($A$B$CURRENCY_ID$CURRENCY_AMOUNT$NOTE)
+  // BID_ID = hash($A$B$CURRENCY_ID$CURRENCY_AMOUNT$DATA)
   // bytes bid_id_prehash [slot 19]
   // bid_id_prehash = concat(Txn.Sender, b)
   txn Sender
@@ -399,9 +399,9 @@ create_bid:
   load 7 // currency_amount_bytes
   concat
   store 19 // bid_id_prehash
-  // bid_id_prehash = concat(bid_id_prehash, note)
+  // bid_id_prehash = concat(bid_id_prehash, data)
   load 19 // bid_id_prehash
-  load 18 // note
+  load 18 // data
   concat
   store 19 // bid_id_prehash
   // bytes bid_id = sha512_256(bid_id_prehash) [slot 20]
@@ -413,7 +413,7 @@ create_bid:
   // log(b)
   // log(currency_id_bytes)
   // log(currency_amount_bytes)
-  // log(note)
+  // log(data)
   // log(bid_id_prehash)
   // log(bid_id)
   
@@ -444,7 +444,7 @@ cancel_bid:
   // bytes bid_id = Txn.ApplicationArgs[1] [slot 0]
   txna ApplicationArgs 1
   store 0 // bid_id
-  // BidWithoutNote bid = get_bid(bid_id) [slot 1]
+  // BidWithoutData bid = get_bid(bid_id) [slot 1]
   load 0 // bid_id
   callsub __func__get_bid
   store 1 // bid
@@ -510,7 +510,7 @@ trade:
   // bytes bid_id = Txn.ApplicationArgs[1] [slot 0]
   txna ApplicationArgs 1
   store 0 // bid_id
-  // BidWithoutNote bid = get_bid(bid_id) [slot 1]
+  // BidWithoutData bid = get_bid(bid_id) [slot 1]
   load 0 // bid_id
   callsub __func__get_bid
   store 1 // bid
@@ -552,7 +552,7 @@ trade:
   itxn_submit
   // end inner_txn
   
-  // note
+  // data
   // int s = Txn.GroupIndex + 1 [slot 3]
   txn GroupIndex
   pushint 1
@@ -561,9 +561,9 @@ trade:
   // int e = Global.GroupSize [slot 4]
   global GroupSize
   store 4 // e
-  // bytes note = Txn.Note [slot 5]
+  // bytes data = Txn.Note [slot 5]
   txn Note
-  store 5 // note
+  store 5 // data
   // for i in s:e:
     load 3 // s
     store 6 // i
@@ -579,12 +579,12 @@ trade:
       ==
       bz l6_end
       // then:
-        // note = concat(note, Gtxn[i].Note)
-        load 5 // note
+        // data = concat(data, Gtxn[i].Note)
+        load 5 // data
         load 6 // i
         gtxns Note
         concat
-        store 5 // note
+        store 5 // data
       l6_end: // end
     load 6 // i
     pushint 1
@@ -593,7 +593,7 @@ trade:
     b l5_for
     l5_end: // end
   
-  // TODO need multiple if note large
+  // TODO need multiple if data large
   // inner_txn:
   itxn_begin
     // TypeEnum: Pay
@@ -606,8 +606,8 @@ trade:
     // Amount: 0
     pushint 0
     itxn_field Amount
-    // Note: note
-    load 5 // note
+    // Note: data
+    load 5 // data
     itxn_field Note
     // Fee: 0
     pushint 0
@@ -666,12 +666,12 @@ update_params:
   load 6 // description
   concat
   store 3 // params
-  // bytes encryption = Txn.ApplicationArgs[6] [slot 7]
+  // bytes encryption_public_key = Txn.ApplicationArgs[6] [slot 7]
   txna ApplicationArgs 6
-  store 7 // encryption
-  // params = concat(params, encryption)
+  store 7 // encryption_public_key
+  // params = concat(params, encryption_public_key)
   load 3 // params
-  load 7 // encryption
+  load 7 // encryption_public_key
   concat
   store 3 // params
   
@@ -705,8 +705,8 @@ update_params:
   pushint 32
   ==
   assert
-  // assert(len(encryption) == 32)
-  load 7 // encryption
+  // assert(len(encryption_public_key) == 32)
+  load 7 // encryption_public_key
   len
   pushint 32
   ==
@@ -749,10 +749,10 @@ load 23 // bid_exists
 pushint 1
 ==
 assert
-// return extract3(bid_contents, 0, BIDWITHOUTNOTESIZE)
+// return extract3(bid_contents, 0, BIDWITHOUTDATASIZE)
 load 24 // bid_contents
 pushint 0
-pushint 169 // BIDWITHOUTNOTESIZE
+pushint 169 // BIDWITHOUTDATASIZE
 extract3
 retsub
 
@@ -812,7 +812,7 @@ load 28 // fx_d
 store 34 // currency_quantity_after_fx
 // int chrony_upper_bound = p.min * (m + ((m * min_precision_n) / min_precision_d)) [slot 35]
 load 31 // p
-pushint 129
+pushint 128
 extract_uint64 // min
 load 30 // m
 load 30 // m
@@ -825,7 +825,7 @@ load 33 // min_precision_d
 store 35 // chrony_upper_bound
 // int chrony_lower_bound = p.min * (m - ((m * min_precision_n) / min_precision_d)) [slot 36]
 load 31 // p
-pushint 129
+pushint 128
 extract_uint64 // min
 load 30 // m
 load 30 // m
@@ -1004,7 +1004,7 @@ load 40 // p
 pushbytes "00000000000000000000000000000000"
 concat
 store 40 // p
-// encryption
+// encryption_public_key
 // p = concat(p, "00000000000000000000000000000000")
 load 40 // p
 pushbytes "00000000000000000000000000000000"

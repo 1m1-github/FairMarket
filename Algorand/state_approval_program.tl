@@ -13,7 +13,6 @@
 # central smart contract
 # default params
 # box with user name contains own params (updatable)
-# box with hash(ABNoteCurrency) is bid
 
 # size=4*8+2*32=96
 struct Params:
@@ -27,7 +26,7 @@ struct Params:
 end
 
 # size=3*32+9*8+1=169
-struct BidWithoutNote:
+struct BidWithoutData:
     # a = A, b = B
     a: bytes[32]
     b: bytes[32]
@@ -35,15 +34,15 @@ struct BidWithoutNote:
     currency_amount: int
     fx_n: int
     fx_d: int
-    type: byte[1]
     time: int
     chrony_importance: int
     highroller_importance: int
     subjective_importance: int
     min: int
     encryption_public_key: bytes[32]
+    type: byte[1]
 end
-const int BIDWITHOUTNOTESIZE = 169
+const int BIDWITHOUTDATASIZE = 169
 
 const int FX_APP = 178969021
 
@@ -153,9 +152,6 @@ block create_bid:
     # fx
     bytes fx = Gtxn[fx_call_ix].LastLog
     bid = concat(bid, fx)
-    # type
-    bytes type = calc_type(b, Gtxn[asset_send_ix].AssetAmount, fx)
-    bid = concat(bid, type)
 
     # time
     bytes time_bytes = itob(Global.LatestTimestamp)
@@ -173,34 +169,38 @@ block create_bid:
     bid = concat(bid, min_bytes)
     bid = concat(bid, p.encryption_public_key)
 
-    # note
+    # type
+    bytes type = calc_type(b, Gtxn[asset_send_ix].AssetAmount, fx)
+    bid = concat(bid, type)
+
+    # data
     int s = Txn.GroupIndex + 1
     int e = Global.GroupSize
     # first 58 bytes of Txn.Note is B as string
-    bytes note = extract(59, 0, Txn.Note)
+    bytes data = extract(59, 0, Txn.Note)
     for i in s:e:
         if Gtxn[i].TypeEnum == Appl:
             if Gtxn[i].ApplicationArgs[0] == "add_data":
-                note = concat(note, Gtxn[i].Note)
+                data = concat(data, Gtxn[i].Note)
             end
         end
     end
-    bid = concat(bid, note)
+    bid = concat(bid, data)
 
     # calc bid_id
-    # BID_ID = hash($A$B$CURRENCY_ID$CURRENCY_AMOUNT$NOTE)
+    # BID_ID = hash($A$B$CURRENCY_ID$CURRENCY_AMOUNT$DATA)
     bytes bid_id_prehash
     bid_id_prehash = concat(Txn.Sender, b)
     bid_id_prehash = concat(bid_id_prehash, currency_id_bytes)
     bid_id_prehash = concat(bid_id_prehash, currency_amount_bytes)
-    bid_id_prehash = concat(bid_id_prehash, note)
+    bid_id_prehash = concat(bid_id_prehash, data)
     bytes bid_id = sha512_256(bid_id_prehash)
 
     # log(Txn.Sender)
     # log(b)
     # log(currency_id_bytes)
     # log(currency_amount_bytes)
-    # log(note)
+    # log(data)
     # log(bid_id_prehash)
     # log(bid_id)
 
@@ -214,7 +214,7 @@ end
 
 block cancel_bid:
     bytes bid_id = Txn.ApplicationArgs[1]
-    BidWithoutNote bid = get_bid(bid_id)
+    BidWithoutData bid = get_bid(bid_id)
 
     # only A can cancel
     assert(Txn.Sender == bid.a)
@@ -248,7 +248,7 @@ end
 
 block trade:
     bytes bid_id = Txn.ApplicationArgs[1]
-    BidWithoutNote bid = get_bid(bid_id)
+    BidWithoutData bid = get_bid(bid_id)
 
     # only B can trade
     assert(Txn.Sender == bid.b)
@@ -263,22 +263,22 @@ block trade:
         Fee: 0
     end
 
-    # note
+    # data
     int s = Txn.GroupIndex + 1
     int e = Global.GroupSize
-    bytes note = Txn.Note
+    bytes data = Txn.Note
     for i in s:e:
         if Gtxn[i].ApplicationArgs[0] == "add_data":
-            note = concat(note, Gtxn[i].Note)
+            data = concat(data, Gtxn[i].Note)
         end
     end
 
-    # TODO need multiple if note large
+    # TODO need multiple if data large
     inner_txn:
         TypeEnum: Pay
         Receiver: bid.a
         Amount: 0
-        Note: note
+        Note: data
         Fee: 0
     end
 
@@ -325,7 +325,7 @@ func get_bid(bid_id: bytes) bytes:
     bytes bid_contents
     bid_exists, bid_contents = box_get(bid_id)
     assert(bid_exists == 1)
-    return extract3(bid_contents, 0, BIDWITHOUTNOTESIZE)
+    return extract3(bid_contents, 0, BIDWITHOUTDATASIZE)
 end
 
 # TODO assert input sizes, choose m appropriately

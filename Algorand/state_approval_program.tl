@@ -23,7 +23,7 @@ struct Params:
     # min in ALGO
     min: int
     description: bytes[32]
-    encryption: bytes[32]
+    encryption_public_key: bytes[32]
 end
 
 # size=3*32+9*8+1=169
@@ -41,7 +41,7 @@ struct BidWithoutNote:
     highroller_importance: int
     subjective_importance: int
     min: int
-    encryption: bytes[32]
+    encryption_public_key: bytes[32]
 end
 const int BIDWITHOUTNOTESIZE = 169
 
@@ -171,7 +171,7 @@ block create_bid:
     bid = concat(bid, subjective_importance_bytes)
     bytes min_bytes = itob(p.min)
     bid = concat(bid, min_bytes)
-    bid = concat(bid, p.encryption)
+    bid = concat(bid, p.encryption_public_key)
 
     # note
     int s = Txn.GroupIndex + 1
@@ -300,15 +300,15 @@ block update_params:
     params = concat(params, min_bytes)
     bytes description = Txn.ApplicationArgs[5]
     params = concat(params, description)
-    bytes encryption = Txn.ApplicationArgs[6]
-    params = concat(params, encryption)
+    bytes encryption_public_key = Txn.ApplicationArgs[6]
+    params = concat(params, encryption_public_key)
 
     assert(len(chrony_importance_bytes) == 8)
     assert(len(highroller_importance_bytes) == 8)
     assert(len(subjective_importance_bytes) == 8)
     assert(len(min_bytes) == 8)
     assert(len(description) == 32)
-    assert(len(encryption) == 32)
+    assert(len(encryption_public_key) == 32)
 
     _ = box_create(params_id, len(params))
     box_replace(params_id, 0, params)
@@ -418,7 +418,7 @@ func get_params(b: bytes) bytes:
     p = concat(p, itob(1))
     # description
     p = concat(p, "00000000000000000000000000000000")
-    # encryption
+    # encryption_public_key
     p = concat(p, "00000000000000000000000000000000")
     
     return p

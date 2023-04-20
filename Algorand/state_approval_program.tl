@@ -41,7 +41,7 @@ struct Params:
     encryption_public_key: bytes[32]
 end
 
-# size=3*32+9*8+1=169
+# size=3*32+9*8=168
 struct BidWithoutData:
     time: int
     # a = A, b = B
@@ -51,15 +51,21 @@ struct BidWithoutData:
     currency_amount: int
     fx_n: int
     fx_d: int
-    chrony_importance: int
-    highroller_importance: int
-    subjective_importance: int
-    min: int
-    encryption_public_key: bytes[32]
+    bid_chrony_importance: int
+    bid_highroller_importance: int
+    bid_subjective_importance: int
+    bid_min: int
+    bid_encryption_public_key: bytes[32]
 end
-const int BIDWITHOUTDATASIZE = 169
+const int BIDWITHOUTDATASIZE = 168
 
 const int FX_APP = 178969021
+
+# FEE_N/FEE_D = FEE is the fraction of the currency_amount kept in the contract
+# currently set to 1/10
+# does not compile as const
+bytes fee_n = itob(1)
+bytes fee_d = itob(10)
 
 # manage code
 ############
@@ -120,6 +126,7 @@ block main:
 end
 
 block create_bid:
+
     # indices
     int fx_call_ix = 0
     int algo_send_ix = 1
@@ -133,11 +140,14 @@ block create_bid:
     # box_content
     # time
     bytes time_bytes = itob(Global.LatestTimestamp)
-    bid = concat(bid, time_bytes)
+    bytes bid = time_bytes
 
     # A, b = B
+    bytes a = Txn.Sender
+    bid = concat(bid, a)
+
     bytes b = Txn.ApplicationArgs[1]
-    bytes bid = concat(Txn.Sender, b)
+    bid = concat(bid, b)
     
     # currency_id
     bytes currency_id_bytes = itob(Gtxn[asset_send_ix].XferAsset)
@@ -237,7 +247,10 @@ block trade:
     assert(Txn.Sender == bid.b)
 
     # send currency to owner
-    int currency_amount_for_b = bid.currency_amount
+    bytes currency_amount_bytes = itob(bid.currency_amount)
+    bytes fee_bytes = (currency_amount_bytes b* fee_n) b/ fee_d
+    bytes currency_amount_for_b_bytes = currency_amount_bytes b- fee_bytes
+    int currency_amount_for_b = btoi(currency_amount_for_b_bytes)
     inner_txn:
         TypeEnum: Axfer
         AssetReceiver: bid.b

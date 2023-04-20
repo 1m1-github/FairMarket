@@ -7,6 +7,27 @@
 
 # central smart contract
 
+# api
+# create bid [A]
+# cancel bid [A]
+# trade [B]
+# update params
+
+# create bid
+# if 0<min, do not allow 0 lurker
+# add box
+
+# cancel bid
+# remove bid
+# send currency back
+
+# trade
+# not with lurker
+# remove bid
+
+# structures
+############
+
 # size=4*8+2*32=96
 # box with user name contains own params (updatable)
 # see get_params for default
@@ -40,23 +61,8 @@ const int BIDWITHOUTDATASIZE = 169
 
 const int FX_APP = 178969021
 
-# api
-# create bid [A]
-# cancel bid [A]
-# trade [B]
-# update params
-
-# create bid
-# if 0<min, do not allow 0 lurker
-# add box
-
-# cancel bid
-# remove bid
-# send currency back
-
-# trade
-# not with lurker
-# remove bid
+# manage code
+############
 
 if Txn.ApplicationID == 0:
     # Handle Create App
@@ -94,6 +100,9 @@ block delete_app:
     exit(0)
 end
 
+# API
+############
+
 block main:
     # safety
     int e = Global.GroupSize
@@ -107,7 +116,6 @@ block main:
         "cancel_bid": cancel_bid
         "trade": trade
         "update_params": update_params
-        "add_data": add_data
     end
 end
 
@@ -157,17 +165,8 @@ block create_bid:
     bid = concat(bid, p.encryption_public_key)
 
     # data
-    int s = Txn.GroupIndex + 1
-    int e = Global.GroupSize
     # first 58 bytes of Txn.Note is B as string
     bytes data = extract(59, 0, Txn.Note)
-    for i in s:e:
-        if Gtxn[i].TypeEnum == Appl:
-            if Gtxn[i].ApplicationArgs[0] == "add_data":
-                data = concat(data, Gtxn[i].Note)
-            end
-        end
-    end
     bid = concat(bid, data)
 
     # calc bid_id
@@ -224,6 +223,7 @@ block cancel_bid:
     # #     end
     # # end
 
+    # box
     _ = box_del(bid_id)
 
     exit(1)
@@ -246,25 +246,16 @@ block trade:
         Fee: 0
     end
 
-    # data
-    int s = Txn.GroupIndex + 1
-    int e = Global.GroupSize
-    bytes data = Txn.Note
-    for i in s:e:
-        if Gtxn[i].ApplicationArgs[0] == "add_data":
-            data = concat(data, Gtxn[i].Note)
-        end
-    end
-
-    # TODO need multiple if data large
+    # send reply to A
     inner_txn:
         TypeEnum: Pay
         Receiver: bid.a
         Amount: 0
-        Note: data
+        Note: Txn.Note
         Fee: 0
     end
 
+    # box
     _ = box_del(bid_id)
 
     exit(1)
@@ -274,6 +265,7 @@ block update_params:
 
     bytes params_id = Txn.Sender
 
+    # extract params
     bytes chrony_importance_bytes = Txn.ApplicationArgs[1]
     bytes highroller_importance_bytes = Txn.ApplicationArgs[2]
     bytes params = concat(chrony_importance_bytes, highroller_importance_bytes)
@@ -286,6 +278,7 @@ block update_params:
     bytes encryption_public_key = Txn.ApplicationArgs[6]
     params = concat(params, encryption_public_key)
 
+    # safety
     assert(len(chrony_importance_bytes) == 8)
     assert(len(highroller_importance_bytes) == 8)
     assert(len(subjective_importance_bytes) == 8)
@@ -293,13 +286,10 @@ block update_params:
     assert(len(description) == 32)
     assert(len(encryption_public_key) == 32)
 
+    # box
     _ = box_create(params_id, len(params))
     box_replace(params_id, 0, params)
 
-    exit(1)
-end
-
-block add_data:
     exit(1)
 end
 
@@ -346,6 +336,7 @@ end
 # end
 
 func get_params(b: bytes) bytes:
+    # from box if exists
     bytes p
     int p_exists
     p_exists, p = box_get(b)

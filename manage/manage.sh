@@ -37,9 +37,6 @@ goal app info --app-id $FAIRMARKET_APP
 export FAIRMARKET_ACCOUNT=
 goal app update --from=$CREATOR --app-id=$FAIRMARKET_APP --approval-prog $TEAL_DIR/$APPROVAL_FILE_NAME.teal --clear-prog $TEAL_DIR/$CLEAR_FILE_NAME.teal
 
-tealish compile $TEALISH_DIR/$APPROVAL_FILE_NAME.tl
-goal app update --from=$CREATOR --app-id=$FAIRMARKET_APP --approval-prog $TEAL_DIR/$APPROVAL_FILE_NAME.teal --clear-prog $TEAL_DIR/$CLEAR_FILE_NAME.teal
-
 # API
 #####
 
@@ -49,17 +46,13 @@ export CURRENCY_ID=10458941
 export CURRENCY_AMOUNT=1
 export FX_LP_APP=148607000
 export FX_LP_ACCOUNT=UDFWT5DW3X5RZQYXKQEMZ6MRWAEYHWYP7YUAPZKPW6WJK3JH3OZPL7PO2Y
-export NOTE_0="hello world"
-# export NOTE_1="world"
-export NOTE=$NOTE_0$NOTE_1
-# BID_ID = hash($A$B$CURRENCY_ID$CURRENCY_AMOUNT$NOTE)
+export DATA="hello world"
+# BID_ID = hash($A$B$CURRENCY_ID$CURRENCY_AMOUNT$DATA)
 export BID_ID="b64:DE3nPpeMfDw9oia3b1/i1+4+5mtbh1wlgopyju6eWFg="
 goal app call --from $A --app-id $FX_APP --foreign-app $FX_LP_APP --foreign-asset $CURRENCY_ID --app-account $FX_LP_ACCOUNT --out $TXNS_DIR/FX.txn
 goal clerk send --from $A --to $FAIRMARKET_ACCOUNT --amount 268900 --out $TXNS_DIR/algo_send.txn
-goal app call --from $A --app-id $FAIRMARKET_APP --foreign-asset $CURRENCY_ID --app-arg "str:create_bid" --app-arg "addr:$B" --app-arg $BID_ID --box $BID_ID --box "addr:$B" --note $B.$NOTE_0 --out $TXNS_DIR/app_call.txn --fee 2000
+goal app call --from $A --app-id $FAIRMARKET_APP --foreign-asset $CURRENCY_ID --app-arg "str:create_bid" --app-arg "addr:$B" --app-arg $BID_ID --box $BID_ID --box "addr:$B" --note $B.$DATA --out $TXNS_DIR/app_call.txn --fee 2000
 goal asset send --from $A --to $FAIRMARKET_ACCOUNT --amount $CURRENCY_AMOUNT --assetid $CURRENCY_ID --out $TXNS_DIR/asset_send.txn
-# goal app call --from $A --app-id $FAIRMARKET_APP --app-arg "str:add_data" --note $NOTE_1 --out $TXNS_DIR/note_extra_1.txn
-# cat $TXNS_DIR/FX.txn $TXNS_DIR/algo_send.txn $TXNS_DIR/app_call.txn $TXNS_DIR/asset_send.txn $TXNS_DIR/note_extra_1.txn > $TXNS_DIR/combined.txn
 cat $TXNS_DIR/FX.txn $TXNS_DIR/algo_send.txn $TXNS_DIR/app_call.txn $TXNS_DIR/asset_send.txn > $TXNS_DIR/combined.txn
 goal clerk group --infile $TXNS_DIR/combined.txn --outfile $TXNS_DIR/create_bid.txn
 goal clerk sign --infile $TXNS_DIR/create_bid.txn --outfile $TXNS_DIR/create_bid.stxn
@@ -72,11 +65,9 @@ tealdbg debug $TEAL_DIR/$APPROVAL_FILE_NAME.teal -d $TXNS_DIR/dryrun.json --grou
 goal app call --from $A --app-id $FAIRMARKET_APP --app-arg "str:cancel_bid" --app-arg $BID_ID --box $BID_ID --foreign-asset $CURRENCY_ID --fee 2000
 
 # trade [seller]
-export NOTE_2="hi "
-export NOTE_3="sky"
+export DATA="ty"
 goal asset optin --account $B --assetid $CURRENCY_ID --out $TXNS_DIR/trade_optin.txn
-goal app call --from $B --app-id $FAIRMARKET_APP --app-account $A --foreign-asset $CURRENCY_ID --app-arg "str:trade" --app-arg $BID_ID --box $BID_ID --note $NOTE_2 --out $TXNS_DIR/trade_app_call.txn --fee 3000
-goal app call --from $B --app-id $FAIRMARKET_APP --app-arg "str:add_data" --note $NOTE_3 --out $TXNS_DIR/trade_note_extra_1.txn
+goal app call --from $B --app-id $FAIRMARKET_APP --app-account $A --foreign-asset $CURRENCY_ID --app-arg "str:trade" --app-arg $BID_ID --box $BID_ID --note $DATA --out $TXNS_DIR/trade_app_call.txn --fee 3000
 cat $TXNS_DIR/trade_optin.txn $TXNS_DIR/trade_app_call.txn $TXNS_DIR/trade_note_extra_1.txn > $TXNS_DIR/combined.txn
 goal clerk group --infile $TXNS_DIR/combined.txn --outfile $TXNS_DIR/trade.txn
 goal clerk sign --infile $TXNS_DIR/trade.txn --outfile $TXNS_DIR/trade.stxn

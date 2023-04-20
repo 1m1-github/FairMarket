@@ -26,7 +26,7 @@ struct Params:
     encryption: bytes[32]
 end
 
-# size=2*32+5*8+1=105
+# size=3*32+9*8+1=169
 struct BidWithoutNote:
     # a = A, b = B
     a: bytes[32]
@@ -37,8 +37,13 @@ struct BidWithoutNote:
     fx_d: int
     type: byte[1]
     time: int
+    chrony_importance: int
+    highroller_importance: int
+    subjective_importance: int
+    min: int
+    encryption: bytes[32]
 end
-const int BIDWITHOUTNOTESIZE = 97
+const int BIDWITHOUTNOTESIZE = 169
 
 const int FX_APP = 178969021
 
@@ -155,6 +160,18 @@ block create_bid:
     # time
     bytes time_bytes = itob(Global.LatestTimestamp)
     bid = concat(bid, time_bytes)
+
+    # params
+    Params p = get_params(b)
+    bytes chrony_importance_bytes = itob(p.chrony_importance)
+    bid = concat(bid, chrony_importance_bytes)
+    bytes highroller_importance_bytes = itob(p.highroller_importance)
+    bid = concat(bid, highroller_importance_bytes)
+    bytes subjective_importance_bytes = itob(p.subjective_importance)
+    bid = concat(bid, subjective_importance_bytes)
+    bytes min_bytes = itob(p.min)
+    bid = concat(bid, min_bytes)
+    bid = concat(bid, p.encryption)
 
     # note
     int s = Txn.GroupIndex + 1

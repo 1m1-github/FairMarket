@@ -4,8 +4,8 @@
 # set env vars for terminal
 export ALGORAND_DATA="$HOME/algorand/testnetdata"
 export WALLET=Fair
-export TEALISH_DIR=./tealish
-export TEAL_DIR=./tealish/build
+export TEALISH_DIR=./Algorand
+export TEAL_DIR=./Algorand/build
 export TXNS_DIR=./txns
 export APPROVAL_FILE_NAME=state_approval_program
 export CLEAR_FILE_NAME=state_clear_program

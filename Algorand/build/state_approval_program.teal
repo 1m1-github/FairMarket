@@ -17,7 +17,7 @@
 
 // size=4*8+2*32=96
 
-// size=2*32+5*8+1=105
+// size=3*32+9*8+1=169
 
 
 // api
@@ -269,89 +269,145 @@ create_bid:
   concat
   store 5 // bid
   
+  // params
+  // Params p = get_params(b) [slot 11]
+  load 4 // b
+  callsub __func__get_params
+  store 11 // p
+  // bytes chrony_importance_bytes = itob(p.chrony_importance) [slot 12]
+  load 11 // p
+  pushint 105
+  extract_uint64 // chrony_importance
+  itob
+  store 12 // chrony_importance_bytes
+  // bid = concat(bid, chrony_importance_bytes)
+  load 5 // bid
+  load 12 // chrony_importance_bytes
+  concat
+  store 5 // bid
+  // bytes highroller_importance_bytes = itob(p.highroller_importance) [slot 13]
+  load 11 // p
+  pushint 113
+  extract_uint64 // highroller_importance
+  itob
+  store 13 // highroller_importance_bytes
+  // bid = concat(bid, highroller_importance_bytes)
+  load 5 // bid
+  load 13 // highroller_importance_bytes
+  concat
+  store 5 // bid
+  // bytes subjective_importance_bytes = itob(p.subjective_importance) [slot 14]
+  load 11 // p
+  pushint 121
+  extract_uint64 // subjective_importance
+  itob
+  store 14 // subjective_importance_bytes
+  // bid = concat(bid, subjective_importance_bytes)
+  load 5 // bid
+  load 14 // subjective_importance_bytes
+  concat
+  store 5 // bid
+  // bytes min_bytes = itob(p.min) [slot 15]
+  load 11 // p
+  pushint 129
+  extract_uint64 // min
+  itob
+  store 15 // min_bytes
+  // bid = concat(bid, min_bytes)
+  load 5 // bid
+  load 15 // min_bytes
+  concat
+  store 5 // bid
+  // bid = concat(bid, p.encryption)
+  load 5 // bid
+  load 11 // p
+  extract 137 32 // encryption
+  concat
+  store 5 // bid
+  
   // note
-  // int s = Txn.GroupIndex + 1 [slot 11]
+  // int s = Txn.GroupIndex + 1 [slot 16]
   txn GroupIndex
   pushint 1
   +
-  store 11 // s
-  // int e = Global.GroupSize [slot 12]
+  store 16 // s
+  // int e = Global.GroupSize [slot 17]
   global GroupSize
-  store 12 // e
+  store 17 // e
   // first 58 bytes of Txn.Note is B as string
-  // bytes note = extract(59, 0, Txn.Note) [slot 13]
+  // bytes note = extract(59, 0, Txn.Note) [slot 18]
   txn Note
   extract 59 0
-  store 13 // note
+  store 18 // note
   // for i in s:e:
-    load 11 // s
-    store 14 // i
+    load 16 // s
+    store 19 // i
     l2_for:
-    load 14 // i
-    load 12 // e
+    load 19 // i
+    load 17 // e
     ==
     bnz l2_end
     // if Gtxn[i].TypeEnum == Appl:
-      load 14 // i
+      load 19 // i
       gtxns TypeEnum
       pushint 6 // Appl
       ==
       bz l3_end
       // then:
         // if Gtxn[i].ApplicationArgs[0] == "add_data":
-          load 14 // i
+          load 19 // i
           gtxnsa ApplicationArgs 0
           pushbytes "add_data"
           ==
           bz l4_end
           // then:
             // note = concat(note, Gtxn[i].Note)
-            load 13 // note
-            load 14 // i
+            load 18 // note
+            load 19 // i
             gtxns Note
             concat
-            store 13 // note
+            store 18 // note
           l4_end: // end
       l3_end: // end
-    load 14 // i
+    load 19 // i
     pushint 1
     +
-    store 14 // i
+    store 19 // i
     b l2_for
     l2_end: // end
   // bid = concat(bid, note)
   load 5 // bid
-  load 13 // note
+  load 18 // note
   concat
   store 5 // bid
   
   // calc bid_id
   // BID_ID = hash($A$B$CURRENCY_ID$CURRENCY_AMOUNT$NOTE)
-  // bytes bid_id_prehash [slot 14]
+  // bytes bid_id_prehash [slot 19]
   // bid_id_prehash = concat(Txn.Sender, b)
   txn Sender
   load 4 // b
   concat
-  store 14 // bid_id_prehash
+  store 19 // bid_id_prehash
   // bid_id_prehash = concat(bid_id_prehash, currency_id_bytes)
-  load 14 // bid_id_prehash
+  load 19 // bid_id_prehash
   load 6 // currency_id_bytes
   concat
-  store 14 // bid_id_prehash
+  store 19 // bid_id_prehash
   // bid_id_prehash = concat(bid_id_prehash, currency_amount_bytes)
-  load 14 // bid_id_prehash
+  load 19 // bid_id_prehash
   load 7 // currency_amount_bytes
   concat
-  store 14 // bid_id_prehash
+  store 19 // bid_id_prehash
   // bid_id_prehash = concat(bid_id_prehash, note)
-  load 14 // bid_id_prehash
-  load 13 // note
+  load 19 // bid_id_prehash
+  load 18 // note
   concat
-  store 14 // bid_id_prehash
-  // bytes bid_id = sha512_256(bid_id_prehash) [slot 15]
-  load 14 // bid_id_prehash
+  store 19 // bid_id_prehash
+  // bytes bid_id = sha512_256(bid_id_prehash) [slot 20]
+  load 19 // bid_id_prehash
   sha512_256
-  store 15 // bid_id
+  store 20 // bid_id
   
   // log(Txn.Sender)
   // log(b)
@@ -362,19 +418,19 @@ create_bid:
   // log(bid_id)
   
   // create box
-  // int box_existed = box_create(bid_id, len(bid)) [slot 16]
-  load 15 // bid_id
+  // int box_existed = box_create(bid_id, len(bid)) [slot 21]
+  load 20 // bid_id
   load 5 // bid
   len
   box_create
-  store 16 // box_existed
+  store 21 // box_existed
   // assert(box_existed == 1)
-  load 16 // box_existed
+  load 21 // box_existed
   pushint 1
   ==
   assert
   // box_replace(bid_id, 0, bid)
-  load 15 // bid_id
+  load 20 // bid_id
   pushint 0
   load 5 // bid
   box_replace
@@ -680,39 +736,39 @@ add_data:
 
 // func get_bid(bid_id: bytes) bytes:
 __func__get_bid:
-store 17 // bid_id
-// int bid_exists [slot 18]
-// bytes bid_contents [slot 19]
+store 22 // bid_id
+// int bid_exists [slot 23]
+// bytes bid_contents [slot 24]
 // bid_exists, bid_contents = box_get(bid_id)
-load 17 // bid_id
+load 22 // bid_id
 box_get
-store 18 // bid_exists
-store 19 // bid_contents
+store 23 // bid_exists
+store 24 // bid_contents
 // assert(bid_exists == 1)
-load 18 // bid_exists
+load 23 // bid_exists
 pushint 1
 ==
 assert
 // return extract3(bid_contents, 0, BIDWITHOUTNOTESIZE)
-load 19 // bid_contents
+load 24 // bid_contents
 pushint 0
-pushint 97 // BIDWITHOUTNOTESIZE
+pushint 169 // BIDWITHOUTNOTESIZE
 extract3
 retsub
 
 // TODO assert input sizes, choose m appropriately
 // func calc_type(b: bytes, asset_amount: int, fx: bytes) bytes:
 __func__calc_type:
-store 20 // fx
-store 21 // asset_amount
-store 22 // b
-// int fx_d = extract_uint64(fx, 8) [slot 23]
-load 20 // fx
+store 25 // fx
+store 26 // asset_amount
+store 27 // b
+// int fx_d = extract_uint64(fx, 8) [slot 28]
+load 25 // fx
 pushint 8
 extract_uint64
-store 23 // fx_d
+store 28 // fx_d
 // if fx_d == 0:
-  load 23 // fx_d
+  load 28 // fx_d
   pushint 0
   ==
   bz l7_end
@@ -721,74 +777,74 @@ store 23 // fx_d
     pushbytes "S"
     retsub
   l7_end: // end
-// int fx_n = extract_uint64(fx, 0) [slot 24]
-load 20 // fx
+// int fx_n = extract_uint64(fx, 0) [slot 29]
+load 25 // fx
 pushint 0
 extract_uint64
-store 24 // fx_n
+store 29 // fx_n
 
-// int m = 10000 [slot 25]
+// int m = 10000 [slot 30]
 pushint 10000
-store 25 // m
+store 30 // m
 
-// Params p = get_params(b) [slot 26]
-load 22 // b
+// Params p = get_params(b) [slot 31]
+load 27 // b
 callsub __func__get_params
-store 26 // p
+store 31 // p
 
-// int min_precision_n = app_global_get("mn") [slot 27]
+// int min_precision_n = app_global_get("mn") [slot 32]
 pushbytes "mn"
 app_global_get
-store 27 // min_precision_n
-// int min_precision_d = app_global_get("md") [slot 28]
+store 32 // min_precision_n
+// int min_precision_d = app_global_get("md") [slot 33]
 pushbytes "md"
 app_global_get
-store 28 // min_precision_d
+store 33 // min_precision_d
 
-// int currency_quantity_after_fx = (m * (asset_amount * fx_n)) / fx_d [slot 29]
-load 25 // m
-load 21 // asset_amount
-load 24 // fx_n
+// int currency_quantity_after_fx = (m * (asset_amount * fx_n)) / fx_d [slot 34]
+load 30 // m
+load 26 // asset_amount
+load 29 // fx_n
 *
 *
-load 23 // fx_d
+load 28 // fx_d
 /
-store 29 // currency_quantity_after_fx
-// int chrony_upper_bound = p.min * (m + ((m * min_precision_n) / min_precision_d)) [slot 30]
-load 26 // p
-pushint 24
+store 34 // currency_quantity_after_fx
+// int chrony_upper_bound = p.min * (m + ((m * min_precision_n) / min_precision_d)) [slot 35]
+load 31 // p
+pushint 129
 extract_uint64 // min
-load 25 // m
-load 25 // m
-load 27 // min_precision_n
+load 30 // m
+load 30 // m
+load 32 // min_precision_n
 *
-load 28 // min_precision_d
+load 33 // min_precision_d
 /
 +
 *
-store 30 // chrony_upper_bound
-// int chrony_lower_bound = p.min * (m - ((m * min_precision_n) / min_precision_d)) [slot 31]
-load 26 // p
-pushint 24
+store 35 // chrony_upper_bound
+// int chrony_lower_bound = p.min * (m - ((m * min_precision_n) / min_precision_d)) [slot 36]
+load 31 // p
+pushint 129
 extract_uint64 // min
-load 25 // m
-load 25 // m
-load 27 // min_precision_n
+load 30 // m
+load 30 // m
+load 32 // min_precision_n
 *
-load 28 // min_precision_d
+load 33 // min_precision_d
 /
 -
 *
-store 31 // chrony_lower_bound
+store 36 // chrony_lower_bound
 
 // if currency_quantity_after_fx == 0:
-  load 29 // currency_quantity_after_fx
+  load 34 // currency_quantity_after_fx
   pushint 0
   ==
   bz l8_elif_0
   // then:
     // if chrony_lower_bound == 0:
-      load 31 // chrony_lower_bound
+      load 36 // chrony_lower_bound
       pushint 0
       ==
       bz l9_else
@@ -807,8 +863,8 @@ store 31 // chrony_lower_bound
   b l8_end
   l8_elif_0:
   // elif currency_quantity_after_fx < chrony_lower_bound:
-  load 29 // currency_quantity_after_fx
-  load 31 // chrony_lower_bound
+  load 34 // currency_quantity_after_fx
+  load 36 // chrony_lower_bound
   <
   bz l8_elif_1
     // return "L"
@@ -817,8 +873,8 @@ store 31 // chrony_lower_bound
   b l8_end
   l8_elif_1:
   // elif chrony_upper_bound < currency_quantity_after_fx:
-  load 30 // chrony_upper_bound
-  load 29 // currency_quantity_after_fx
+  load 35 // chrony_upper_bound
+  load 34 // currency_quantity_after_fx
   <
   bz l8_else
     // return "H"
@@ -842,16 +898,16 @@ retsub
 
 // func opt_in(asset_id: int):
 __func__opt_in:
-store 32 // asset_id
-// int is_opted_in [slot 33]
+store 37 // asset_id
+// int is_opted_in [slot 38]
 // is_opted_in, _ = asset_holding_get(AssetBalance, Global.CurrentApplicationAddress, asset_id)
 global CurrentApplicationAddress
-load 32 // asset_id
+load 37 // asset_id
 asset_holding_get AssetBalance
-store 33 // is_opted_in
+store 38 // is_opted_in
 pop // discarding value for _
 // if is_opted_in == 0:
-  load 33 // is_opted_in
+  load 38 // is_opted_in
   pushint 0
   ==
   bz l10_end
@@ -868,7 +924,7 @@ pop // discarding value for _
       pushint 0
       itxn_field AssetAmount
       // XferAsset: asset_id
-      load 32 // asset_id
+      load 37 // asset_id
       itxn_field XferAsset
       // Fee: 0
       pushint 0
@@ -900,22 +956,22 @@ retsub
 
 // func get_params(b: bytes) bytes:
 __func__get_params:
-store 34 // b
-// bytes p [slot 35]
-// int p_exists [slot 36]
+store 39 // b
+// bytes p [slot 40]
+// int p_exists [slot 41]
 // p_exists, p = box_get(b)
-load 34 // b
+load 39 // b
 box_get
-store 36 // p_exists
-store 35 // p
+store 41 // p_exists
+store 40 // p
 // if p_exists == 1:
-  load 36 // p_exists
+  load 41 // p_exists
   pushint 1
   ==
   bz l11_end
   // then:
     // return p
-    load 35 // p
+    load 40 // p
     retsub
   l11_end: // end
 
@@ -928,33 +984,33 @@ itob
 pushint 1
 itob
 concat
-store 35 // p
+store 40 // p
 // p = concat(p, itob(1))
-load 35 // p
+load 40 // p
 pushint 1
 itob
 concat
-store 35 // p
+store 40 // p
 // min
 // p = concat(p, itob(1))
-load 35 // p
+load 40 // p
 pushint 1
 itob
 concat
-store 35 // p
+store 40 // p
 // description
 // p = concat(p, "00000000000000000000000000000000")
-load 35 // p
+load 40 // p
 pushbytes "00000000000000000000000000000000"
 concat
-store 35 // p
+store 40 // p
 // encryption
 // p = concat(p, "00000000000000000000000000000000")
-load 35 // p
+load 40 // p
 pushbytes "00000000000000000000000000000000"
 concat
-store 35 // p
+store 40 // p
 
 // return p
-load 35 // p
+load 40 // p
 retsub

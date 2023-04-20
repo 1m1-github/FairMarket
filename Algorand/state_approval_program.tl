@@ -5,16 +5,11 @@
 # B trades to receive currency and send receipt to A
 # receipt contains data
 
-# global
-# version:int
-# min_precision_n: int
-# min_precision_d: int
-
 # central smart contract
-# default params
-# box with user name contains own params (updatable)
 
 # size=4*8+2*32=96
+# box with user name contains own params (updatable)
+# see get_params for default
 struct Params:
     chrony_importance: int
     highroller_importance: int
@@ -27,6 +22,7 @@ end
 
 # size=3*32+9*8+1=169
 struct BidWithoutData:
+    time: int
     # a = A, b = B
     a: bytes[32]
     b: bytes[32]
@@ -34,13 +30,11 @@ struct BidWithoutData:
     currency_amount: int
     fx_n: int
     fx_d: int
-    time: int
     chrony_importance: int
     highroller_importance: int
     subjective_importance: int
     min: int
     encryption_public_key: bytes[32]
-    type: byte[1]
 end
 const int BIDWITHOUTDATASIZE = 169
 
@@ -66,16 +60,6 @@ const int FX_APP = 178969021
 
 if Txn.ApplicationID == 0:
     # Handle Create App
-
-    # version
-    app_global_put("v", 1)
-
-    # min_precision_n
-    app_global_put("mn", 1)
-
-    # min_precision_d
-    app_global_put("md", 10)
-
     exit(1)
 end
 
@@ -111,7 +95,6 @@ block delete_app:
 end
 
 block main:
-
     # safety
     int e = Global.GroupSize
     for i in 0:e:
@@ -140,22 +123,24 @@ block create_bid:
     opt_in(Gtxn[asset_send_ix].XferAsset)
 
     # box_content
+    # time
+    bytes time_bytes = itob(Global.LatestTimestamp)
+    bid = concat(bid, time_bytes)
+
     # A, b = B
     bytes b = Txn.ApplicationArgs[1]
     bytes bid = concat(Txn.Sender, b)
+    
     # currency_id
     bytes currency_id_bytes = itob(Gtxn[asset_send_ix].XferAsset)
     bid = concat(bid, currency_id_bytes)
     # currency_amount
     bytes currency_amount_bytes = itob(Gtxn[asset_send_ix].AssetAmount)
     bid = concat(bid, currency_amount_bytes)
+    
     # fx
     bytes fx = Gtxn[fx_call_ix].LastLog
     bid = concat(bid, fx)
-
-    # time
-    bytes time_bytes = itob(Global.LatestTimestamp)
-    bid = concat(bid, time_bytes)
 
     # params
     Params p = get_params(b)
@@ -167,11 +152,9 @@ block create_bid:
     bid = concat(bid, subjective_importance_bytes)
     bytes min_bytes = itob(p.min)
     bid = concat(bid, min_bytes)
-    bid = concat(bid, p.encryption_public_key)
 
-    # type
-    bytes type = calc_type(b, Gtxn[asset_send_ix].AssetAmount, fx)
-    bid = concat(bid, type)
+    # encryption
+    bid = concat(bid, p.encryption_public_key)
 
     # data
     int s = Txn.GroupIndex + 1
@@ -326,45 +309,6 @@ func get_bid(bid_id: bytes) bytes:
     bid_exists, bid_contents = box_get(bid_id)
     assert(bid_exists == 1)
     return extract3(bid_contents, 0, BIDWITHOUTDATASIZE)
-end
-
-# TODO assert input sizes, choose m appropriately
-func calc_type(b: bytes, asset_amount: int, fx: bytes) bytes:
-    int fx_d = extract_uint64(fx, 8)
-    if fx_d == 0:
-        return "S"
-    end
-    int fx_n = extract_uint64(fx, 0)
-
-    int m = 10000
-
-    Params p = get_params(b)
-
-    int min_precision_n = app_global_get("mn")
-    int min_precision_d = app_global_get("md")
-    
-    int currency_quantity_after_fx = (m * (asset_amount * fx_n)) / fx_d
-    int chrony_upper_bound = p.min * (m + ((m * min_precision_n) / min_precision_d))
-    int chrony_lower_bound = p.min * (m - ((m * min_precision_n) / min_precision_d))
-
-    if currency_quantity_after_fx == 0:
-        if chrony_lower_bound == 0:
-            return "L"
-        else:
-            # 0 lurker with 0<min is a spammer
-            exit(0)
-        end
-    elif currency_quantity_after_fx < chrony_lower_bound:
-        return "L"
-    elif chrony_upper_bound < currency_quantity_after_fx:
-        return "H"
-    else:
-        return "C"
-    end
-
-    # should never reach here
-    exit(0)
-    return "X"
 end
 
 func opt_in(asset_id: int):

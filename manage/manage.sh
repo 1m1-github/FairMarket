@@ -31,10 +31,10 @@ tealish compile $TEALISH_DIR/$CLEAR_FILE_NAME.tl
 # export MIN_PRECISION_N="int:1"
 # export MIN_PRECISION_D="int:10"
 # export VERSION="int:1"
-goal app create --creator $CREATOR --approval-prog $TEAL_DIR/$APPROVAL_FILE_NAME.teal --clear-prog $TEAL_DIR/$CLEAR_FILE_NAME.teal --global-byteslices 0 --global-ints 3 --local-byteslices 0 --local-ints 0
-export FAIRMARKET_APP=190904981
+goal app create --creator $CREATOR --approval-prog $TEAL_DIR/$APPROVAL_FILE_NAME.teal --clear-prog $TEAL_DIR/$CLEAR_FILE_NAME.teal --global-byteslices 0 --global-ints 0 --local-byteslices 0 --local-ints 0
+export FAIRMARKET_APP=
 goal app info --app-id $FAIRMARKET_APP
-export FAIRMARKET_ACCOUNT=A2P7TMONFNNJKNDKMDIOGAOQ3HCELYA6OCWR4JIF2PBT6KNQCPVHKY3IVQ
+export FAIRMARKET_ACCOUNT=
 goal app update --from=$CREATOR --app-id=$FAIRMARKET_APP --approval-prog $TEAL_DIR/$APPROVAL_FILE_NAME.teal --clear-prog $TEAL_DIR/$CLEAR_FILE_NAME.teal
 
 tealish compile $TEALISH_DIR/$APPROVAL_FILE_NAME.tl

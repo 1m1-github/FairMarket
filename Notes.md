@@ -95,6 +95,10 @@ This provides the most generic definition possible.
 Not formalized in this whitepaper.
 
 <br></br>
+## forecaseting subjective order
+Using learner algorithms (information) to mimic the users subj order and offer that order or random.
+
+<br></br>
 ## total ordering
 Objective bids already have deterministic ordering. If subjective bids are presented in time order, we get a total ordering using the sellers subjective value function. The total ordering is known only to the seller.
 

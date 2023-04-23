@@ -178,7 +178,7 @@ We want to create a **market** function such that:
 <br></br>
 ## Internal category order
 
-**Chrony** **bid**s are **time** ordered, **highroller** **bids** are **value** ordered, **subjective** **bid**s are ordered by each **seller** *subjectively* and **lurker** **bid**s live in the [projective infinity](https://github.com/1m1-github/FairMarket/blob/main/Notes.md#projective-infinity), never serviced.
+**Chrony** **bid**s are **time** ordered, **highroller** **bids** are **value** ordered, **subjective** **bid**s are ordered by each **seller** *subjectively*[forecaseting subjective order](https://github.com/1m1-github/FairMarket/blob/main/Notes.md#forecaseting-subjective-order) and **lurker** **bid**s live in the [projective infinity](https://github.com/1m1-github/FairMarket/blob/main/Notes.md#projective-infinity), never serviced.
 
 <br></br>
 ## Traditional **market**s as special cases

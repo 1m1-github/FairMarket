@@ -63,6 +63,8 @@ This is a service guarantee for those bidding the minimum (chrony). A highroller
 <br></br>
 ## deterministic and finite
 should be written up formally
+see fairmarket.js in FairInbox for formalism
+since non availability of a category is what triggers the only change possible in ordering, and this kind of event improves every bids ordering, descreasing the wait time. thus max wait time is deterministic. we have the formula. see dart code. 
 
 <br></br>
 ## auditability is better

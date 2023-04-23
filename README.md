@@ -171,6 +171,8 @@ We want to create a **market** function such that:
 
 - worst case **rank** for **chrony** **bids** is [finite](https://github.com/1m1-github/FairMarket/blob/main/Notes.md#chrony-only-worst-case-finite)
 
+- worst case **rank** for all **bids** is [deterministic](https://github.com/1m1-github/FairMarket/blob/main/Notes.md#worst-case-rank-deterministic)
+
 - the **seller** can use it's own subjective value function to value **subjective bid**s
 
 <br></br>

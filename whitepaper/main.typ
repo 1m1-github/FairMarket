@@ -42,7 +42,7 @@ This then allows for an ordering of the #emph[bid]s
 $ DD = [B#sub[1], ..., B#sub[N]] = [MM^1(nothing), MM^2(nothing), ..., MM^N(nothing)] = [MM#super[rank] (nothing)]_(op("rank")=1)^N $
 \ 
 In this paper, we will define a partial ordering and a total ordering that is #link(<fairest>)[_fairest_], most #link(<most-inclusive>)[_inclusive_] and accomodates #link(<all-markets>)[all] types of #emph[market]s, as well as innovating new types of #emph[market]s with a generic framework.
-\ \ 
+\ \ \ \ 
 == Parameters
 \ \
 The _seller_ sets the following _parameters_ $PP$:

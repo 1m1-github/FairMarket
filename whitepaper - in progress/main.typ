@@ -1,6 +1,6 @@
 #import "template.typ": *
 #show: ams-article.with(
-  title: "2i2i ~ the provably fairest and most inclusive market model",
+  title: "FairMarket ~ the provably fairest and most inclusive market model",
   authors: (
     (
       name: "1m1",
@@ -8,8 +8,9 @@
     ),
   ),
   abstract: "This paper describes a novel, multi-dimensional, infinitely inclusive market model. The described model yields infinite types of new market dynamics and traditional markets as special cases, based on very few parameters. As the market allows any supply of arbitrarily small or large value to be traded in any currency, incl. subjective value currencies, any resulting liquid market must then find the fairest value of the supply.",
-  bibliography-file: "refs.bib",
+  //bibliography-file: "refs.bib",
 )
+#show link: underline
 
 = Definitions
 
@@ -17,7 +18,7 @@
 
 Assume we have a _seller_ with a finite _supply_ $SS$ and there exists a _demand_ $DD$ consisting of #emph[bid]s.
 
-//A _market_ $MM$ is a function that determines the *next* _bid_ to be #link()[serviced]. Formally,
+A _market_ $MM$ is a function that determines the *next* _bid_ to be #link(<all-trade-is-sequential>)[serviced]. Formally,
 
 $ MM(SS, DD) = B $
 
@@ -39,7 +40,7 @@ This then allows for an ordering of the #emph[bid]s
 
 $ DD = [B#sub[1], ..., B#sub[N]] = [MM^1(nothing), MM^2(nothing), ..., MM^N(nothing)] = [MM#super[rank] (nothing)]_(op("rank")=1)^N $
 
-//In this paper, we will define a partial ordering and a total ordering that is _[fairest](https://github.com/2i2i///whitepaper/blob/main/Notes.md#fairest)_, most _[inclusive](https://github.com/2i2i/whitepaper/blob/main/Notes.md#most-inclusive)_ and accomodates [all](https://github.com/2i2i/whitepaper/blob/main/Notes.md#all-markets) types of #emph[market]s, as well as innovating new types of _market_s with a generic framework.
+In this paper, we will define a partial ordering and a total ordering that is #link(<fairest>)[_fairest_], most #link(<most-inclusive>)[_inclusive_] and accomodates #link(<all-markets>)[all] types of #emph[market]s, as well as innovating new types of #emph[market]s with a generic framework.
 
 == Parameters
 
@@ -76,13 +77,13 @@ The _amount_ $A$ contains a quantity $q$, a _currency_ $op("ccy")$ and an exchan
 #let subj = "subj"
 #let base = "base"
 
-//Let $CC$ be the universe of all existing [currencies](https://github.com/2i2i/whitepaper/blob/main/Notes.md#currency).
+//Let $CC$ be the universe of all existing #link(<currency>)[currencies].
 
 Then
 
 $ CC = CC_obj union.dot CC_subj $
 
-//that is, any _currency_ either has [objective value xor subjective value](https://github.com/2i2i/whitepaper/blob/main/Notes.md#objective-vs-subjective-value).
+//that is, any _currency_ either has #link(<objective-vs-subjective-value>)[objective value xor subjective value].
 
 We choose some
 
@@ -112,7 +113,7 @@ The _amount_ $A$ of each _objective_ _bid_ can be transformed into the chosen _b
 
 $ B(T, A = (q, ccy, FX), PP) arrow.r B_base(T, A = (FX dot.op q , ccy_base, FX ident.strict 1), PP) $
 
-//> This means, without loss of generality, we can [assume](https://github.com/2i2i/whitepaper/blob/main/Notes.md#assuming) all _objective bids_ to be denominated in the _base currency_.
+//> This means, without loss of generality, we can #link(<assuming>)[assume] all _objective bids_ to be denominated in the _base currency_.
 
 == _Bid_ Categories
 
@@ -126,7 +127,7 @@ $ B(T, A = (q, ccy, FX), PP) arrow.r B_base(T, A = (FX dot.op q , ccy_base, FX i
 #let SUBJ = "SUBJ"
 #let BC = "BC"
 
-// [Assuming](https://github.com/2i2i/whitepaper/blob/main/Notes.md#assuming) that the _min_ value $\underline{M}$ is also in the _base currency_, we [define](https://github.com/2i2i/whitepaper/blob/main/Notes.md#practical-chrony) the following 4 _bid_ categories:
+// #link(<assuming>)[Assuming] that the _min_ value $\underline{M}$ is also in the _base currency_, we #link(<practical-chrony>)[define] the following 4 _bid_ categories:
 
 $ chrony (bold(CHR)) arrow.l.r.double B op(" is objective and ") q = underline(M) $
 $ highroller (bold(HR)) arrow.l.r.double B op(" is objective and ") q > underline(M) $
@@ -148,7 +149,7 @@ $ II_x in NN_(gt.eq 0), x in {CHR, HR, LURK, SUBJ} $
 the market is activated
 $ 0 < sum_x II_x =: sum II $
 
-// and the _[lurkers](https://github.com/2i2i/whitepaper/blob/main/Notes.md#why-lurkers)_ never get serviced
+// and the #link(<why-lurkers>)[_lurkers_] never get serviced
 
 $ II_LURK = 0 $
 
@@ -169,17 +170,17 @@ We want to create a _market_ function such that:
 
 - _importance_ is respected
 
-//- order of _objective_ #emph[bid]s is objectively [deterministic](https://github.com/2i2i/whitepaper/blob/main/Notes.md#deterministic)
+//- order of _objective_ #emph[bid]s is objectively #link(<deterministic>)[deterministic]
 
 - internal category order is maintained
 
-// - worst case _rank_ for _chrony_ _bids_ is [finite](https://github.com/2i2i/whitepaper/blob/main/Notes.md#chrony-only-worst-case-finite)
+// - worst case _rank_ for _chrony_ _bids_ is #link(<chrony-only-worst-case-finite>)[finite]
 
 - the _seller_ can use it's own subjective value function to value #emph[subjective bid]s
 
 == Internal category order
 
-//_Chrony_ #emph[bid]s are _time_ ordered, _highroller_ _bids_ are _value_ ordered, _subjective_ #emph[bid]s are ordered by each _seller_ *subjectively* and _lurker_ #emph[bid]s live in the [projective infinity](https://github.com/2i2i/whitepaper/blob/main/Notes.md#projective-infinity), never serviced.
+//_Chrony_ #emph[bid]s are _time_ ordered, _highroller_ _bids_ are _value_ ordered, _subjective_ #emph[bid]s are ordered by each _seller_ *subjectively* and _lurker_ #emph[bid]s live in the #link(<projective-infinity>)[projective infinity], never serviced.
 
 == Traditional #emph[market]s as special cases
 
@@ -232,227 +233,272 @@ The _importance_ $II$ can be converted into decimals as follows:
 
 $ II arrow.r nu_x = frac(II_x, sum I) in [0;1] $
 
-// $$\square\in\\\{\text{\bf{C\bf{HR}}}, \text{\bf{HR}}, \text{\bf{LURK}}, \text{\bf{SUBJ}}\\\}$$
+$ x in {CHR, HR, LURK, SUBJ} $
 
-// We also know that
+We also know that
 
-// $$\nu_\text{\bf{LURK}} = 0$$
+$ nu_LURK = 0 $
 
-// $$\sum_\square\nu_\square = 1$$
+$ sum_x nu_x = 1 $
 
-// $$\implies\nu_\text{\bf{SUBJ}} = 1 - \nu_\text{\bf{C\bf{HR}}} - \nu_\text{\bf{HR}}$$
+$ arrow.r.double nu_SUBJ = 1 - nu_CHR - nu_HR $
 
-// which means that $\mathcal{I}$ can be represented as a 2-dim vector:
+which means that $II$ can be represented as a 2-dim vector:
 
-// $$\mathcal{I} = \begin{pmatrix} \nu_\text{\bf{C\bf{HR}}} \\ \nu_\text{\bf{HR}} \end{pmatrix}$$
+$ II = vec(nu_CHR, nu_HR) $
 
-// <br></br>
-// ### 3. Define $\mathcal{M}$
+<br>
+=== 3. Define $MM$
 
-// Given the previous max $\sum\mathcal{I}-1$ number of bids $[B_n,\ldots,B_m]$, we want to choose the next _bid_ $B_\text{next}$.
+Given the previous max $sum II - 1$ number of #emph[bid]s $[B_n, ... ,B_m]$, we want to choose the *next* #emph[bid] $B#sub[next]$.
 
-// First, we choose the next _bid_ _category_ as the _category_ that brings our realized _importance_ [closest](https://github.com/2i2i/whitepaper/blob/main/Notes.md#distance) ($\delta$) to the target _importance_ as set by the seller.
+// First, we choose the next _bid_ _category_ as the _category_ that brings our realized _importance_ #link(<distance>)[closest] ($\delta$) to the target _importance_ as set by the seller.
 
-// To that end, calculate the realized _importance_ $\hat{\mathcal{I}}$ including an *assumed* next _bid_ _category_ $\text{BC}(B_\text{next})$
+To that end, calculate the realized _importance_ $hat(II)$ including an *assumed* next _bid_ _category_ $BC(B#sub[next])$
 
-// $$\hat{\mathcal{I}}=\begin{pmatrix} \hat{\nu}_\text{\bf{C\bf{HR}}} \\ \hat{\nu}_\text{\bf{HR}} \end{pmatrix}$$
+$ hat(II) = vec(hat(nu)_CHR, hat(nu)_HR) $
 
-// $$\hat{\nu}_\square = \frac{\\\#\\\{\text{BC}(B_i)==\square\\\}_{i=n\ldots m+1}}{m-n+1}$$
 
-// and choose $\text{BC}(B_\text{next})$ as $\underset{\text{BC}(B_\text{next})}{\text{argmin }}\delta(\mathcal{I}, \hat{\mathcal{I}})$.
+$ hat(nu)_x = frac(\#{BC(B_i) == x}#sub[i=n...m+1], m - n + 1) $
 
-// If the next _category_ should be $\text{\bf{C\bf{HR}}}$, then $B_\text{next}$ is the chronogically next $\text{\bf{C\bf{HR}}}$ _bid_ available.
+and choose $BC(B#sub[next])$ as $limits("argmin")_(BC(B#sub[next])) delta(II, hat(II))$.
 
-// If the next _category_ should be $\text{\bf{HR}}$, then $B_\text{next}$ is the value ordered next $\text{\bf{HR}}$ _bid_ available.
+If the next _category_ should be $CHR$, then $B#sub[next]$ is the chronogically next $CHR$ _bid_ available.
 
-// If the next _category_ should be $\text{\bf{SUBJ}}$, then $B_\text{next}$ can be chosen in the two following ways:
+If the next _category_ should be $HR$, then $B#sub[next]$ is the value ordered next $HR$ _bid_ available.
 
-// 1. $B_\text{next}$ is the chronogically next $\text{\bf{SUBJ}}$ _bid_ available. However, the _seller_ can choose to decline the _bid_, using it's subjective value function.
+If the next _category_ should be $SUBJ$, then $B#sub[next]$ can be chosen in the two following ways:
 
-// 1. Let the _seller_ choose one xor none from all the existing $\text{\bf{SUBJ}}$ #emph[bid]s.
+1. $B#sub[next]$ is the chronogically next $SUBJ$ _bid_ available. However, the _seller_ can choose to decline the _bid_, using it's subjective value function.
 
-// >Either case results in a [total](https://github.com/2i2i/whitepaper/blob/main/Notes.md#total-ordering), deterministic and objective ordering of all the _objective_ _bids_ and a total subjective ordering of all the _subjective_ #emph[bid]s, both interwoven according to the chosen _importance_ $\mathcal{I}$.
+1. Let the _seller_ choose one xor none from all the existing $SUBJ$ #emph[bid]s.
 
-// A discussion of the choices is found [here](https://github.com/2i2i/whitepaper/blob/main/Notes.md#full-subj-choice-is-better).
+>Either case results in a #link(<total-ordering>)[total], deterministic and objective ordering of all the _objective_ _bids_ and a total subjective ordering of all the _subjective_ #emph[bid]s, both interwoven according to the chosen _importance_ $II$.
 
+A discussion of the choices is found #link(<full-subj-choice-is-better>)[here].
 
-// Note the next _category_ can never be $\text{\bf{LURK}}$, as $\nu_\text{\bf{LURK}}=0$. The _seller_ can convert $\text{\bf{LURK}}$ #emph[bid]s into $\text{\bf{C\bf{HR}}}$ or $\text{\bf{HR}}$ #emph[bid]s or vice-versa by changing the _minimum_ $\underline{M}$.
 
-// <br></br>
-// ## Worst case _rank_
+Note the next _category_ can never be $LURK$, as $nu_LURK=0$. The _seller_ can convert $LURK$ #emph[bid]s into $CHR$ or $HR$ #emph[bid]s or vice-versa by changing the _minimum_ $underline(M)$.
 
-// Any _bid_ can always choose to cancel, thereby *improving* the _rank_ of all #emph[bid]s behind it. Hence we only need to talk about the worst case.
+<br>
+== Worst case _rank_
 
-// Worst case rank is deterministic if we allow it to be $\infty$, which it is for _HR_, _SUBJ_, _LURK_.
+Any _bid_ can always choose to cancel, thereby *improving* the _rank_ of all #emph[bid]s behind it. Hence we only need to talk 
+about the worst case.
 
-// ### _CHR_
-// The above algorithm keeps the worst case _rank_ for _CHR_ #emph[bid]s [deterministic and finite]().
+Worst case rank is deterministic if we allow it to be $infinity$, which it is for _HR_, _SUBJ_, _LURK_.
 
-// This is mainly because each $\mathcal{I}$ is finite, the number of #emph[bid]s is finite, internal _CHR_ order is total and deterministic and change of _parameters_ locks all existing objective bids in a total order.
+=== _CHR_
+The above algorithm keeps the worst case _rank_ for _CHR_ #emph[bid]s [deterministic and finite]().
 
+This is mainly because each $II$ is finite, the number of #emph[bid]s is finite, internal _CHR_ order is total and deterministic and change of _parameters_ locks all existing objective bids in a total order.
 
 
 
-// <br></br><br></br>
-// # <b>III. Infinite inclusivity</b>
-// <br></br>
+<br><br>
+= *III. Infinite inclusivity*
+<br>
 
-// ## The case
+== The case
 
-// We can assume that any possible _supply_ $\mathcal{S}$ has positive value, even if miniscule. The old world did not allow the transfer of smaller values than some threshold.
+We can assume that any possible _supply_ $SS$ has positive value, even if miniscule. The old world did not allow the transfer of smaller values than some threshold.
 
-// Using a chain of _CFS_, defined below, we can transact arbitrarily small (or large) values.
+Using a chain of _CFS_, defined below, we can transact arbitrarily small (or large) values.
 
-// Hence, every kind and quantity of any _supply_ is supported.
-// This market model is _infinitely inclusive_.
+Hence, every kind and quantity of any _supply_ is supported.
+This market model is _infinitely inclusive_.
 
-// <br></br>
-// ## Smart contracts
+<br>
+== Smart contracts
 
-// Smart contracts are autonomous, decentralized apps. The described market model is implemented as a smart contract for the following reasons: _infinite inclusivity_, zero credit risk, perfect [transparency](https://github.com/2i2i/whitepaper/blob/main/Notes.md#auditability-is-better), ability to use any kind of _currency_.
+Smart contracts are autonomous, decentralized apps. The described market model is implemented as a smart contract for the following reasons: _infinite inclusivity_, zero credit risk, perfect #link(<auditability-is-better>)[transparency], ability to use any kind of _currency_.
 
-// <br></br>
-// ## _Fungability_
+<br>
+== _Fungability_
 
-// A _currency_ is called _fungible_ if it is available in varying units.
+A _currency_ is called _fungible_ if it is available in varying units.
 
-// We can define the _fungability_ $\mathbb{F}$ of a _currency_ as the ratio of it's base unit to it's minimal unit.
+We can define the _fungability_ $FF$ of a _currency_ as the ratio of it's base unit to it's minimal unit.
 
-// E.g. 
+E.g. 
 
-// $$\mathbb{F}(\text{USD})=10^2$$
+$ FF("USD") = 10^2 $
+$ FF("BTC") = 10^8 $
+$ FF("NFT") = 10^0 = 1 $
 
-// $$\mathbb{F}(\text{BTC})=10^8$$
+<br>
+== Constant Factor Stablecoin (_CFS_)
 
-// $$\mathbb{F}(\text{NFT})=10^0=1$$
+A _CFS_ is a simple, permissionless smart contract that exchanges the minimal unit of a _currency_ $ccy_1$ for $phi$ units of a new currency $ccy_2$ and vice-versa, as available.
 
-// <br></br>
-// ## Constant Factor Stablecoin (_CFS_)
+$ccy_2$ is created by and initially fully owned by the _CFS_. For the current intents and purposes, we can refer to $ccy_2$ as the _CFS_
 
-// A _CFS_ is a simple, permissionless smart contract that exchanges the minimal unit of a _currency_ $\text{ccy}_1$ for $\phi$ units of a new currency $\text{ccy}_2$ and vice-versa, as available.
+$ ccy_2 approx "CFS"(ccy_1, phi) $
 
-// $\text{ccy}_2$ is created by and initially fully owned by the _CFS_. For the current intents and purposes, we can refer to $\text{ccy}_2$ as the _CFS_
+A _CFS_ never rounds and only makes exact exchanges.
 
-// $$\text{ccy}_2 \approx \text{CFS}(\text{ccy}_1, \phi)$$
+Using a _CFS_, we have increased the fungability of #link(<fungable-nfts>)[any] _currency_ $ccy$
 
-// A _CFS_ never rounds and only makes exact exchanges.
+$ FF("CFS"(ccy, phi)) = phi dot.op FF(ccy) $
 
-// Using a _CFS_, we have increased the fungability of [any](https://github.com/2i2i/whitepaper/blob/main/Notes.md#fungable-nfts) _currency_ $\text{ccy}$
+<br>
+== Infinitely inclusive
 
-// $$\mathbb{F}(\text{CFS}(ccy, \phi)) = \phi \cdot \mathbb{F}(ccy)$$
+Assume the value of the _supply_ $SS$ is $epsilon > 0$. $epsilon$ can be arbitrarily small.
 
-// <br></br>
-// ## Infinitely inclusive
+By chaining CFS, we can keep increasing the _fungability_ until $epsilon$ can be represented exactly.
 
-// Assume the value of the _supply_ $\mathcal{S}$ is $\epsilon > 0$. $\epsilon$ can be arbitrarily small.
+$ FF("CFS"^N(ccy, phi)) = phi^N dot.op FF(ccy) $
 
-// By chaining CFS, we can keep increasing the _fungability_ until $\epsilon$ can be represented exactly.
+> A chain of CFS can achieve arbitrary _fungability_.
 
-// $$\mathbb{F}(\text{CFS}^N(ccy, \phi)) = \phi^N \cdot \mathbb{F}(ccy)$$
 
-// > A chain of CFS can achieve arbitrary _fungability_.
 
+<br>
+<br>
+= *IV. Conclusion*
+<br>
 
+== Provably _fairest_ market
 
-// <br></br>
-// <br></br>
-// # <b>IV. Conclusion</b>
-// <br></br>
+Consider:
 
-// ## Provably _fairest_ market
+- We accomodate any supply of arbitrarily small or large value.
+- We allow any currency, whether those of objective value xor subjective value.
+- We define currency as an arbitrarily fungible bundle of arbitrary energy and information.
+- We accomodate the entire region of objective value currencies possible (below, at and above the min value).
+- We create the desired (according to importance) sequence of servicing the demand.
+- We allow for infinite types of dynamics incl. traditional markets as special cases, set via simple parameters.
 
-// Consider:
+All these superlatives make this market model the most open possible.
 
-// - We accomodate any supply of arbitrarily small or large value.
-// - We allow any currency, whether those of objective value xor subjective value.
-// - We define currency as an arbitrarily fungible bundle of arbitrary energy and information.
-// - We accomodate the entire region of objective value currencies possible (below, at and above the min value).
-// - We create the desired (according to importance) sequence of servicing the demand.
-// - We allow for infinite types of dynamics incl. traditional markets as special cases, set via simple parameters.
+> Assuming liquidity, this market model thus provides the fairest valuation of any supply.
 
-// All these superlatives make this market model the most open possible.
+ By changing the parameters, minimum $underline(M)$ and importance $II$, the seller can run a #link(<multidim-optimisation>)[multi-dim optimisation] to find the type of market that maximises it's value.
 
-// > Assuming liquidity, this market model thus provides the fairest valuation of any supply.
+<br>
+== Provably fairest economy
 
-// By changing the parameters, minimum $\underline{M}$ and importance $\mathcal{I}$, the seller can run a [multi-dim optimisation](https://github.com/2i2i/whitepaper/blob/main/Notes.md#multidim-optimisation) to find the type of market that maximises it's value.
+An _economy_ is a set of #emph[trade]s. The event of a _bid_ getting _serviced_ is a _trade_. If this market model provides the _fairest_ valuation and with it the _fairest_ trade, then the resulting _economy_ is _fairest_ _economy_ possible.
 
-// <br></br>
-// ## Provably fairest economy
+Micro-economics teaches us that (specilization and) *fair* trading improves the value of all parties.
 
-// An _economy_ is a set of _trade_s. The event of a _bid_ getting _serviced_ is a _trade_. If this market model provides the _fairest_ valuation and with it the _fairest_ trade, then the resulting _economy_ is _fairest_ _economy_ possible.
+<br>
+== Maximum value $arrow.l.r.double$ Supply = _time_
 
-// Micro-economics teaches us that (specilization and) *fair* trading improves the value of all parties.
+//If this paper is correct in that the described market model results in the _fairest_ valuation, then it should be used for all _market_s. Especially the most valuable market: #link(<live-in-the-now>)[_time_]
 
-// <br></br>
-// ## Maximum value $\Leftrightarrow$ Supply = _time_
+- Everyone has _time_
+- Everyone knows that _time_ is most valuable.
 
-// If this paper is correct in that the described market model results in the _fairest_ valuation, then it should be used for all _market_s. Especially the most valuable market:
-// [_time_](https://github.com/2i2i/whitepaper/blob/main/Notes.md#live-in-the-now)
+When _supply_=_time_, all currencies are per $Delta T$. Current technology already allows $Delta T lt.eq 1 "sec"}$.
 
-// - Everyone has _time_
-// - Everyone knows that _time_ is most valuable.
+= *Notes*
 
-// When _supply_=_time_, all currencies are per $\Delta T$. Current technology already allows $\Delta T \le 1 \text{ sec}$.
+<br>
+== most inclusive <most-inclusive>
+Considering only supplies of positive value, since we can support arbitrarily small or large values, in any type currency, we are infinitely inclusive. Being infinitely inclusive also makes it most inclusive.
 
-= Notes
+<br>
+== fairest <fairest>
+The fairest value is achieved in the most open market possible based on the assumption that adding an intelligence to a group of intelligences increases the accuracy of the joined valuation of anything. It is valuation based on maximal information.
 
-//#locate(loc => {
-//  hi
-//})
+<br>
+== fungable NFTs <fungable-nfts>
+Even an NFT could in this manner be broken into smaller pieces. Having art with higher fungability increases the size of the demand, however it also seems to decrease the perceived value by some.
 
-Call me Ishmael. Some years ago --- never mind how long precisely ---
-having little or no money in my purse, and nothing particular to
-interest me on shore, I thought I would sail about a little and see
-the watery part of the world. It is a way I have of driving off the
-spleen, and regulating the circulation.  Whenever I find myself
-growing grim about the mouth; whenever it is a damp, drizzly November
-in my soul; whenever I find myself involuntarily pausing before coffin
-warehouses, and bringing up the rear of every funeral I meet; and
-especially whenever my hypos get such an upper hand of me, that it
-requires a strong moral principle to prevent me from deliberately
-stepping into the street, and methodically knocking people's hats off
---- then, I account it high time to get to sea as soon as I can. This
-is my substitute for pistol and ball. With a philosophical flourish
-Cato throws himself upon his sword; I quietly take to the ship. There
-is nothing surprising in this. If they but knew it, almost all men in
-their degree, some time or other, cherish very nearly the same
-feelings towards the ocean with me. @netwok2020
+<br>
+== full subj choice is better <full-subj-choice-is-better>
+Since the seller is using it's own subjective value function, there can be no apriori internal ordering. And since there is no point in cancelling bids by the seller, as a bid can simply reappear (unless the bidder is blocked), there is no need for any internal ordering. If the next bid is $SUBJ$ then the seller can choose any or none of the $SUBJ$ bids.
 
-There now is your insular city of the Manhattoes, belted round by
-wharves as Indian isles by coral reefs - commerce surrounds it with
-her surf. Right and left, the streets take you waterward. Its extreme
-down-town is the battery, where that noble mole is washed by waves,
-and cooled by breezes, which a few hours previous were out of sight of
-land. Look at the crowds of water-gazers there.
+<br>
+== distance <distance>
+For $delta$, we can choose any 2-dim distance measure, e.g. the Euclidean metric.
 
-Anyone caught using formulas such as $sqrt(x+y)=sqrt(x)+sqrt(y)$
-or $1/(x+y) = 1/x + 1/y$ will fail.
+<br>
+== practical chrony <practical-chrony>
+For practical reasons, such as real time FX changes, it can make sense to define the categories with a precision $epsilon>0$, and the relative distance $delta=ln(q/underline(M))$ as follows
 
-The binomial theorem is
-$ (x+y)^n=sum_(k=0)^n binom(n, k) x^k y^(n-k). $
+$ "chrony" (CHR) arrow.l.r.double B " is objective and " |delta| lt.eq epsilon $
 
-A favorite sum of most mathematicians is
-$ sum_(n=1)^oo 1/n^2 = pi^2 / 6. $
+$ "highroller" (HR) arrow.l.r.double B " is objective and " delta > epsilon $
 
-Likewise a popular integral is
-$ integral_(-oo)^oo e^(-x^2) dif x = sqrt(pi) $
+$ "lurker" (LURK) arrow.l.r.double B " is objective and " delta < -epsilon $
 
-#theorem[
-  The square of any real number is non-negative.
-]
+<br>
+== why lurkers <why-lurkers>
+Lurkers complete the picture of the demand. They allow the seller to realise the optimal minimum price. Traditional markets leave sellers blind to this entire bottom part of the demand.
 
-#proof[
-  Any real number $x$ satisfies $x > 0$, $x = 0$, or $x < 0$. If $x = 0$,
-  then $x^2 = 0 >= 0$. If $x > 0$ then as a positive time a positive is
-  positive we have $x^2 = x x > 0$. If $x < 0$ then $−x > 0$ and so by
-  what we have just done $x^2 = (−x)^2 > 0$. So in all cases $x^2 ≥ 0$.
-]
+<br>
+== assuming <assuming>
+These are not real 'assumptions'. These prerequisites that we are asking for are trivial and hence we are "assuming" them to be true already. Real 'assumptions' can be wrong.
 
-= Introduction
-This is a new section.
+<br>
+== energy and info <energy-and-info>
+Energy and information as defined by the Sciences, as two fundamental elements of nature.
 
-== Things that need to be done
-Prove theorems.
+<br>
+== min value <min-value>
+Every seller has the right to define it's own minimum value for its supply.
 
-= Background
-#lorem(40)
+<br>
+== all markets <all-markets>
+I think this statement can be made formally thanks to us defining _currency_ as generally as possible.
+
+<br>
+== all trade is sequential <all-trade-is-sequential>
+Serviced is used as meaning "traded".
+
+Any finite supply requires ordering of demand. All selling of any supply is approximately sequential and most selling is sequential. Even selling digital copies of a product that seems unlimited, is in fact limited due to network bandwidth being limited and servers usually order demand on a "first-come, first-serve" basis. When supply is very large vs demand, then modeling a simultaneous trading sequentially, is not any loss at all, as the sequence can simply move very fast, giving the illution of simultaneouity.
+
+<br>
+== chrony only worst case finite <chrony-only-worst-case-finite>
+This is a service guarantee for those bidding the minimum (chrony). A highroller is basically participating in an auction for a sooner service, which is only sooner iff $II_CHR < II_HR$. An subjective bid might never be serviced, as it depends on the seller's subjective value function. A lurker is by definition never serviced.
+
+<br>
+== deterministic and finite <deterministic-and-finite>
+should be written up formally
+see fairmarket.js in FairInbox for formalism
+since non availability of a category is what triggers the only change possible in ordering, and this kind of event improves every bids ordering, descreasing the wait time. thus max wait time is deterministic. we have the formula. see dart code. 
+
+<br>
+== auditability is better <auditability-is-better>
+Even better than transparency is privacy with auditibility. This allows entities to maintain private information whilst satisfying society that everything is legal.
+
+<br>
+== multidim optimisation <multidim-optimisation>
+Based on my own intensive research on highly noisy and highly dimensional optimisation, I have found a multi-start Nelder-Maed to provide the best result. Solutions that have many simulations ending in them are much more likely to contain true information, rather than noise, i.e. being less outlier prone.
+
+<br>
+== objective vs subjective value <objective-vs-subjective-value>
+Any currency can be said to have objective value if there exists a liquid market to exchange at least the base unit of this currency into another objective value currency. We assume that a community can agree on at least one currency that is declared objective.
+
+Every other currency is called subjective. 
+
+<br>
+== currency <currency>
+We define a currency as any bundle of energy and information that can be transmitted from one entity to another, incl. bundles containing no energy (only information) xor only energy (no information).
+
+This provides the most generic definition possible.
+
+<br>
+== projective infinity <projective-infinity>
+Not formalized in this whitepaper.
+
+<br>
+== total ordering <total-ordering>
+Objective bids already have deterministic ordering. If subjective bids are presented in time order, we get a total ordering using the sellers subjective value function. The total ordering is known only to the seller.
+
+<br>
+== deterministic <deterministic>
+means that the outputs will not change if the inputs do not change
+
+<br>
+== live in the now <live-in-the-now>
+One could even replace appointments with such a market for ones **time**. Whenever you choose to interact with a person, instead of consulting an appointment schedule, consult the market. Importance and urgency are all expressed via the energy and information contained in every bid.
+
+Btw, time can e.g. easily be supplied via live media streams.
+
+<br>
+== acknowledgement <acknowledgement>
+The information found in this white paper was created by [1m1](https://1m1.io) with the help of Solli Kim. Thank you Solli for sharing your mind.

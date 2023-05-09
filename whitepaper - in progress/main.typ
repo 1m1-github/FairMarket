@@ -26,7 +26,6 @@ $ MM(SS, DD) = B $
 
 where $B in DD$ is a _bid_.
 \ \ 
-
 More generally, we add a parameter to the _market_ $MM$ to output the _bid_ *next after* some given _bid_ $B$.
 
 $ MM(SS, DD, B) = B#sub[next] $
@@ -78,7 +77,6 @@ The _amount_ $A$ contains a quantity $q$, a _currency_ $op("ccy")$ and an exchan
 #let obj = "obj"
 #let subj = "subj"
 #let base = "base"
-
 Let $CC$ be the universe of all existing #link(<currency>)[currencies]. Then
 
 $ CC = CC_obj union.dot CC_subj $
@@ -101,14 +99,12 @@ and
 
 $ FX(ccy) = nothing op(" if") ccy in CC_subj $
 \ \
-
 Before we categorize the #emph[bid]s, let's simplify them. First, we call a _bid_ $B$ _objective_
 
 $ B op(" is objective") arrow.l.r.double ccy in CC_obj $
 
 if it is of an objective value currency.
 \ \
-
 The _amount_ $A$ of each _objective_ _bid_ can be transformed into the chosen _base currency_, as follows:
 
 $ B(T, A = (q, ccy, FX), PP) arrow.r B_base(T, A = (FX dot.op q , ccy_base, FX ident.strict 1), PP) $
@@ -126,7 +122,6 @@ $ B(T, A = (q, ccy, FX), PP) arrow.r B_base(T, A = (FX dot.op q , ccy_base, FX i
 #let subjective = "subjective"
 #let SUBJ = "SUBJ"
 #let BC = "BC"
-
 #link(<assuming>)[Assuming] that the _min_ value $underline(M)$ is also in the _base currency_, we #link(<practical-chrony>)[define] the following 4 _bid_ categories:
 
 $ chrony (bold(CHR)) arrow.l.r.double B op(" is objective and ") q = underline(M) $
@@ -213,14 +208,13 @@ We can almost surely assume
 $ T_i eq.not T_j op(" if ") i eq.not j $
 
 that the #emph[bid]s can be sorted chronologically.
-
+\ \ 
 Given this chronological ordering, let's group the #emph[bid]s by creating subsequences of constant _parameters_:
 
 $ underbrace(B_1 + ... + B_i_1, PP_1), underbrace(B_(i_1+1) + ... + B_i_2, PP_2), ..., underbrace(B_(i_G_N+1) + ... + B_N, PP_G_N) $
 
 that is, changing the _parameters_ $PP$ fixes the current order.
 \ \
-
 We are left with the task of ordering the #emph[bid]s given constant _parameters_ $PP$.
 \ \ 
 2. Decimal Importance
@@ -259,23 +253,23 @@ $ hat(nu)_x = frac(\#{BC(B_i) == x}#sub[i=n...m+1], m - n + 1) $
 
 and choose $BC(B#sub[next])$ as $limits("argmin")_(BC(B#sub[next])) delta(II, hat(II))$.
 \ \ 
-
+\ \ 
 If the next _category_ should be $CHR$, then $B#sub[next]$ is the chronogically next $CHR$ _bid_ available.
-
+\ \ 
 If the next _category_ should be $HR$, then $B#sub[next]$ is the value ordered next $HR$ _bid_ available.
-
+\ \ 
 If the next _category_ should be $SUBJ$, then $B#sub[next]$ can be chosen in the two following ways:
 
 a. $B#sub[next]$ is the chronogically next $SUBJ$ _bid_ available. However, the _seller_ can choose to decline the _bid_, using it's subjective value function.
 
 b. Let the _seller_ choose one xor none from all the existing $SUBJ$ #emph[bid]s.
 \ \ 
-
+\ \ 
 *Either case results in a #link(<total-ordering>)[total], deterministic and objective ordering of all the _objective_ _bids_ and a total subjective ordering of all the _subjective_ #emph[bid]s, both interwoven according to the chosen _importance_ $II$.*
-
+\ \ 
 A discussion of the choices is found #link(<full-subj-choice-is-better>)[here].
 \ \ 
-
+\ \ 
 Note the next _category_ can never be $LURK$, as $nu_LURK=0$. The _seller_ can convert $LURK$ #emph[bid]s into $CHR$ or $HR$ #emph[bid]s or vice-versa by changing the _minimum_ $underline(M)$.
 
 \ \
@@ -283,9 +277,9 @@ Note the next _category_ can never be $LURK$, as $nu_LURK=0$. The _seller_ can c
 \ \ 
 Any _bid_ can always choose to cancel, thereby *improving* the _rank_ of all #emph[bid]s behind it. Hence we only need to talk 
 about the worst case.
-
+\ \ 
 Worst case rank is deterministic if we allow it to be $infinity$, which it is for _HR_, _SUBJ_, _LURK_.
-
+\ \ 
 _CHR_
 The above algorithm keeps the worst case _rank_ for _CHR_ #emph[bid]s [deterministic and finite]().
 
@@ -293,31 +287,31 @@ This is mainly because each $II$ is finite, the number of #emph[bid]s is finite,
 
 
 
-\ \ \ \
+\ \ 
 = *Infinite inclusivity*
 \ \
 
 == The case
-
+\ \
 We can assume that any possible _supply_ $SS$ has positive value, even if miniscule. The old world did not allow the transfer of smaller values than some threshold.
-
+\ \
 Using a chain of _CFS_, defined below, we can transact arbitrarily small (or large) values.
-
+\ \
 Hence, every kind and quantity of any _supply_ is supported.
 This market model is _infinitely inclusive_.
 
 \ \
 == Smart contracts
-
+\ \
 Smart contracts are autonomous, decentralized apps. The described market model is implemented as a smart contract for the following reasons: _infinite inclusivity_, zero credit risk, perfect #link(<auditability-is-better>)[transparency], ability to use any kind of _currency_.
 
 \ \
 == _Fungability_
-
+\ \
 A _currency_ is called _fungible_ if it is available in varying units.
-
+\ \
 We can define the _fungability_ $FF$ of a _currency_ as the ratio of it's base unit to it's minimal unit.
-
+\ \
 E.g. 
 
 $ FF("USD") = 10^2 $
@@ -326,22 +320,21 @@ $ FF("NFT") = 10^0 = 1 $
 
 \ \
 == Constant Factor Stablecoin (_CFS_)
-
+\ \
 A _CFS_ is a simple, permissionless smart contract that exchanges the minimal unit of a _currency_ $ccy_1$ for $phi$ units of a new currency $ccy_2$ and vice-versa, as available.
-
+\ \
 $ccy_2$ is created by and initially fully owned by the _CFS_. For the current intents and purposes, we can refer to $ccy_2$ as the _CFS_
 
 $ ccy_2 approx "CFS"(ccy_1, phi) $
-
 A _CFS_ never rounds and only makes exact exchanges.
-
+\ \
 Using a _CFS_, we have increased the fungability of #link(<fungable-nfts>)[any] _currency_ $ccy$
 
 $ FF("CFS"(ccy, phi)) = phi dot.op FF(ccy) $
 
 \ \
 == Infinitely inclusive
-
+\ \
 Assume the value of the _supply_ $SS$ is $epsilon > 0$. $epsilon$ can be arbitrarily small.
 \ \ 
 By chaining CFS, we can keep increasing the _fungability_ until $epsilon$ can be represented exactly.
@@ -353,12 +346,11 @@ $ FF("CFS"^N(ccy, phi)) = phi^N dot.op FF(ccy) $
 
 
 \ \
-\ \
 = *IV. Conclusion*
 \ \
 
 == Provably _fairest_ market
-
+\ \
 Consider:
 
 - We accomodate any supply of arbitrarily small or large value.
@@ -369,21 +361,21 @@ Consider:
 - We allow for infinite types of dynamics incl. traditional markets as special cases, set via simple parameters.
 
 All these superlatives make this market model the most open possible.
-
+\ \
 *Assuming liquidity, this market model thus provides the fairest valuation of any supply.*
-
- By changing the parameters, minimum $underline(M)$ and importance $II$, the seller can run a #link(<multidim-optimisation>)[multi-dim optimisation] to find the type of market that maximises it's value.
+\ \
+By changing the parameters, minimum $underline(M)$ and importance $II$, the seller can run a #link(<multidim-optimisation>)[multi-dim optimisation] to find the type of market that maximises it's value.
 
 \ \
 == Provably fairest economy
-
+\ \
 An _economy_ is a set of #emph[trade]s. The event of a _bid_ getting _serviced_ is a _trade_. If this market model provides the _fairest_ valuation and with it the _fairest_ trade, then the resulting _economy_ is _fairest_ _economy_ possible.
-
+\ \
 Micro-economics teaches us that (specilization and) *fair* trading improves the value of all parties.
 
 \ \
 == Maximum value $arrow.l.r.double$ Supply = _time_
-
+\ \
 If this paper is correct in that the described market model results in the _fairest_ valuation, then it should be used for all #emph[market]s. Especially the most valuable market: #link(<live-in-the-now>)[_time_]
 
 - Everyone has _time_
@@ -391,6 +383,7 @@ If this paper is correct in that the described market model results in the _fair
 
 When _supply_=_time_, all currencies are per $Delta T$. Current technology already allows $Delta T lt.eq 1 "sec"}$.
 
+\ \
 = *Notes*
 
 \ \

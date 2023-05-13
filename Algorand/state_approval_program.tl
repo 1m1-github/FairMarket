@@ -294,6 +294,8 @@ end
 
 block update_params:
 
+    check_update_params()
+
     bytes params_id = Txn.Sender
 
     # extract params
@@ -410,6 +412,10 @@ func check_trade():
     end
 
     return
+end
+
+func check_update_params():
+    assert(Global.GroupSize == 1)
 end
 
 func get_params(b: bytes) bytes:

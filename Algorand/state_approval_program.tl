@@ -137,8 +137,8 @@ block create_bid:
     # indices
     int fx_call_ix = 0
     int algo_send_ix = 1
-    int app_call_ix = 2
-    int asset_send_ix = 3
+    int asset_send_ix = 2
+    int app_call_ix = 3
 
     check_create_bid(fx_call_ix, algo_send_ix, app_call_ix, asset_send_ix)
     
@@ -208,7 +208,16 @@ block create_bid:
     assert(box_existed == 1)
     box_replace(bid_id, 0, bid)
 
-    clear_gas()
+    # send unused gas to Sender
+    int clear_gas_amount = clear_gas()
+    if 1000 < clear_gas_amount:
+        inner_txn:
+            TypeEnum: Pay
+            Receiver: Txn.Sender
+            Amount: clear_gas_amount
+            Fee: 0
+        end
+    end
 
     exit(1)
 end
@@ -248,7 +257,16 @@ block cancel_bid:
     # box
     _ = box_del(bid_id)
 
-    clear_gas()
+    # send unused gas to Sender
+    int clear_gas_amount = clear_gas()
+    if 1000 < clear_gas_amount:
+        inner_txn:
+            TypeEnum: Pay
+            Receiver: Txn.Sender
+            Amount: clear_gas_amount
+            Fee: 0
+        end
+    end
 
     exit(1)
 end
@@ -275,19 +293,18 @@ block trade:
         Fee: 0
     end
 
-    # send reply to A
-    inner_txn:
-        TypeEnum: Pay
-        Receiver: bid.a
-        Amount: 0
-        Note: Txn.Note
-        Fee: 0
-    end
-
     # box
     _ = box_del(bid_id)
 
-    clear_gas()
+    # send reply and unused gas to A
+    int clear_gas_amount = clear_gas()
+    inner_txn:
+        TypeEnum: Pay
+        Receiver: bid.a
+        Amount: clear_gas_amount
+        Note: Txn.Note
+        Fee: 0
+    end
 
     exit(1)
 end
@@ -326,17 +343,16 @@ block update_params:
     exit(1)
 end
 
-func clear_gas():
-    int amount = balance(0) - Global.MinBalance
-    if 1000 < amount:
-        inner_txn:
-            TypeEnum: Pay
-            Receiver: Txn.Sender
-            Amount: amount
-            Fee: 0
-        end
-    end
-    return
+func clear_gas() int:
+    int y
+    int own_account_balance
+    y, own_account_balance = acct_params_get(AcctBalance, Global.CurrentApplicationAddress)
+    # log(itob(own_account_balance))
+    int own_account_min_balance
+    y, own_account_min_balance = acct_params_get(AcctMinBalance, Global.CurrentApplicationAddress)
+    # log(itob(own_account_min_balance))
+
+    return own_account_balance - own_account_min_balance
 end
 
 func get_bid(bid_id: bytes) bytes:

@@ -125,9 +125,6 @@ block main:
         "trade": trade
         "update_params": update_params
     end
-    # first three of above methods can reduce min_balance
-    # hence, send rest gas (clear_gas) to Sender
-    # not after the last method
 
     exit(0)
 end
@@ -208,17 +205,6 @@ block create_bid:
     assert(box_existed == 1)
     box_replace(bid_id, 0, bid)
 
-    # send unused gas to Sender
-    int clear_gas_amount = clear_gas()
-    if 1000 < clear_gas_amount:
-        inner_txn:
-            TypeEnum: Pay
-            Receiver: Txn.Sender
-            Amount: clear_gas_amount
-            Fee: 0
-        end
-    end
-
     exit(1)
 end
 
@@ -257,6 +243,7 @@ block cancel_bid:
     # box
     _ = box_del(bid_id)
 
+    # cancel reduces min_balance
     # send unused gas to Sender
     int clear_gas_amount = clear_gas()
     if 1000 < clear_gas_amount:
@@ -296,6 +283,7 @@ block trade:
     # box
     _ = box_del(bid_id)
 
+    # trade reduces min_balance
     # send reply and unused gas to A
     int clear_gas_amount = clear_gas()
     inner_txn:

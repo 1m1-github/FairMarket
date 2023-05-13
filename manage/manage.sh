@@ -62,6 +62,10 @@ goal clerk rawsend --filename $TXNS_DIR/create_bid.stxn
 goal clerk dryrun -t $TXNS_DIR/create_bid.stxn --dryrun-dump --dryrun-accounts $CURRENCY_CREATOR -o $TXNS_DIR/dryrun.json
 tealdbg debug $TEAL_DIR/$APPROVAL_FILE_NAME.teal -d $TXNS_DIR/dryrun.json --group-index 2 --mode application
 
+# costs
+# opt-in: 0.001 + 0.1
+# box: reserve
+
 # cancel bid [bidder]
 goal app call --from $A --app-id $FAIRMARKET_APP --app-arg "str:cancel_bid" --app-arg $BID_ID --box $BID_ID --foreign-asset $CURRENCY_ID --fee 2000
 

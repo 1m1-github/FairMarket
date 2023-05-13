@@ -114,6 +114,8 @@ block main:
     int e = Global.GroupSize
     for i in 0:e:
         assert(Gtxn[i].RekeyTo == Global.ZeroAddress)
+        assert(Gtxn[i].AssetCloseTo == Global.ZeroAddress)
+        assert(Gtxn[i].CloseRemainderTo == Global.ZeroAddress)
     end
 
     # main switch
@@ -121,8 +123,13 @@ block main:
         "create_bid": create_bid
         "cancel_bid": cancel_bid
         "trade": trade
+        # above methods can reduce min_balance
+        # hence, send rest gas to Sender
+        # not after the below method
         "update_params": update_params
     end
+
+    exit(0)
 end
 
 block create_bid:
@@ -133,7 +140,7 @@ block create_bid:
     int app_call_ix = 2
     int asset_send_ix = 3
 
-    # check_create_bid(asset_send_ix, fx_call_ix, app_call_ix, algo_send_ix)
+    check_create_bid(fx_call_ix, algo_send_ix, app_call_ix, asset_send_ix)
     
     opt_in(Gtxn[asset_send_ix].XferAsset)
 
@@ -201,6 +208,8 @@ block create_bid:
     assert(box_existed == 1)
     box_replace(bid_id, 0, bid)
 
+    clear_gas()
+
     exit(1)
 end
 
@@ -235,6 +244,8 @@ block cancel_bid:
 
     # box
     _ = box_del(bid_id)
+
+    clear_gas()
 
     exit(1)
 end
@@ -271,6 +282,8 @@ block trade:
     # box
     _ = box_del(bid_id)
 
+    clear_gas()
+
     exit(1)
 end
 
@@ -306,6 +319,19 @@ block update_params:
     exit(1)
 end
 
+func clear_gas():
+    int amount = balance(0) - Global.MinBalance
+    if 1000 < amount:
+        inner_txn:
+            TypeEnum: Pay
+            Receiver: Txn.Sender
+            Amount: amount
+            Fee: 0
+        end
+    end
+    return
+end
+
 func get_bid(bid_id: bytes) bytes:
     int bid_exists
     bytes bid_contents
@@ -329,24 +355,32 @@ func opt_in(asset_id: int):
     return
 end
 
-# func check_create_bid(asset_send_ix: int, fx_call_ix: int, app_call_ix: int, algo_send_ix: int):
-#     assert(Gtxn[asset_send_ix].TypeEnum == Axfer)
-#     assert(Gtxn[asset_send_ix].AssetReceiver == Global.CurrentApplicationAddress)
-#     assert(Gtxn[fx_call_ix].TypeEnum == Appl)
-#     assert(Gtxn[fx_call_ix].Sender == Gtxn[asset_send_ix].Sender)
-#     assert(Gtxn[fx_call_ix].ApplicationID == FX_APP)
-#     assert(Gtxn[asset_send_ix].XferAsset == Gtxn[fx_call_ix].Assets[0])
-#     assert(Txn.GroupIndex == app_call_ix)
-#     assert(Txn.Sender == Gtxn[asset_send_ix].Sender)
-#     assert(Gtxn[algo_send_ix].TypeEnum == Pay)
-#     assert(Gtxn[algo_send_ix].Sender == Gtxn[asset_send_ix].Sender)
-#     assert(Gtxn[algo_send_ix].Receiver == Global.CurrentApplicationAddress)
-#     int e = Global.GroupSize
-#     for i in 4:e:
-#         assert(Gtxn[i].TypeEnum == Appl)
-#     end
-#     return
-# end
+func check_create_bid(fx_call_ix: int, algo_send_ix: int, app_call_ix: int, asset_send_ix: int):
+    assert(Gtxn[fx_call_ix].TypeEnum == Appl)
+    assert(Gtxn[algo_send_ix].TypeEnum == Pay)
+    # assert(Gtxn[app_call_ix].TypeEnum == Appl) # NOT NEEDED, as we are in this Appl
+    assert(Gtxn[asset_send_ix].TypeEnum == Axfer)
+
+    assert(Gtxn[fx_call_ix].Sender == Gtxn[asset_send_ix].Sender)
+    assert(Txn.Sender == Gtxn[asset_send_ix].Sender)
+    assert(Gtxn[algo_send_ix].Sender == Gtxn[asset_send_ix].Sender)
+
+    assert(Gtxn[asset_send_ix].AssetReceiver == Global.CurrentApplicationAddress)
+    assert(Gtxn[algo_send_ix].Receiver == Global.CurrentApplicationAddress)
+    
+    assert(Gtxn[fx_call_ix].ApplicationID == FX_APP)
+    assert(Gtxn[asset_send_ix].XferAsset == Gtxn[fx_call_ix].Assets[0])
+    assert(Txn.GroupIndex == app_call_ix)
+
+    # simpler for now
+    assert(Global.GroupSize == 4)
+    # int e = Global.GroupSize
+    # for i in 4:e:
+    #     assert(Gtxn[i].TypeEnum == Appl)
+    # end
+    
+    return
+end
 
 func get_params(b: bytes) bytes:
     # from box if exists

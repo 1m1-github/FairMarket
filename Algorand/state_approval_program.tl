@@ -214,6 +214,9 @@ block create_bid:
 end
 
 block cancel_bid:
+
+    check_cancel_bid()
+
     bytes bid_id = Txn.ApplicationArgs[1]
     BidWithoutData bid = get_bid(bid_id)
 
@@ -379,6 +382,11 @@ func check_create_bid(fx_call_ix: int, algo_send_ix: int, app_call_ix: int, asse
     #     assert(Gtxn[i].TypeEnum == Appl)
     # end
     
+    return
+end
+
+func check_cancel_bid():
+    assert(Global.GroupSize == 1)
     return
 end
 

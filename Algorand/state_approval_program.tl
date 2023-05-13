@@ -123,11 +123,11 @@ block main:
         "create_bid": create_bid
         "cancel_bid": cancel_bid
         "trade": trade
-        # above methods can reduce min_balance
-        # hence, send rest gas to Sender
-        # not after the below method
         "update_params": update_params
     end
+    # first three of above methods can reduce min_balance
+    # hence, send rest gas (clear_gas) to Sender
+    # not after the last method
 
     exit(0)
 end
@@ -405,7 +405,7 @@ func check_trade():
         assert(Gtxn[0].AssetSender == Txn.Sender)
         assert(Txn.GroupIndex == 1)
 
-        Gtxn[0].Assets[0] == Txn.Assets[0]
+        assert(Gtxn[0].Assets[0] == Txn.Assets[0])
 
     else:
         exit(0)
@@ -416,6 +416,7 @@ end
 
 func check_update_params():
     assert(Global.GroupSize == 1)
+    return
 end
 
 func get_params(b: bytes) bytes:

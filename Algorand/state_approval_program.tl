@@ -254,6 +254,8 @@ block cancel_bid:
 end
 
 block trade:
+    check_trade()
+
     bytes bid_id = Txn.ApplicationArgs[1]
     BidWithoutData bid = get_bid(bid_id)
 
@@ -387,6 +389,26 @@ end
 
 func check_cancel_bid():
     assert(Global.GroupSize == 1)
+    return
+end
+
+func check_trade():
+    if Global.GroupSize == 1:
+        return
+    elif Global.GroupSize == 2:
+
+        assert(Gtxn[0].TypeEnum == Axfer)
+        assert(Gtxn[0].AssetAmount == 0)
+
+        assert(Gtxn[0].AssetSender == Txn.Sender)
+        assert(Txn.GroupIndex == 1)
+
+        Gtxn[0].Assets[0] == Txn.Assets[0]
+
+    else:
+        exit(0)
+    end
+
     return
 end
 

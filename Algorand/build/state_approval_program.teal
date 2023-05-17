@@ -181,9 +181,6 @@ main:
   ==
   bnz update_params
   err // unexpected value
-  // first three of above methods can reduce min_balance
-  // hence, send rest gas (clear_gas) to Sender
-  // not after the last method
   
   // exit(0)
   pushint 0
@@ -405,34 +402,6 @@ create_bid:
   load 7 // bid
   box_replace
   
-  // send unused gas to Sender
-  // int clear_gas_amount = clear_gas() [slot 22]
-  callsub __func__clear_gas
-  store 22 // clear_gas_amount
-  // if 1000 < clear_gas_amount:
-    pushint 1000
-    load 22 // clear_gas_amount
-    <
-    bz l2_end
-    // then:
-      // inner_txn:
-      itxn_begin
-        // TypeEnum: Pay
-        pushint 1 // Pay
-        itxn_field TypeEnum
-        // Receiver: Txn.Sender
-        txn Sender
-        itxn_field Receiver
-        // Amount: clear_gas_amount
-        load 22 // clear_gas_amount
-        itxn_field Amount
-        // Fee: 0
-        pushint 0
-        itxn_field Fee
-      itxn_submit
-      // end inner_txn
-    l2_end: // end
-  
   // exit(1)
   pushint 1
   return
@@ -504,6 +473,7 @@ cancel_bid:
   box_del
   pop // discarding value for _
   
+  // cancel reduces min_balance
   // send unused gas to Sender
   // int clear_gas_amount = clear_gas() [slot 4]
   callsub __func__clear_gas
@@ -512,7 +482,7 @@ cancel_bid:
     pushint 1000
     load 4 // clear_gas_amount
     <
-    bz l3_end
+    bz l2_end
     // then:
       // inner_txn:
       itxn_begin
@@ -530,7 +500,7 @@ cancel_bid:
         itxn_field Fee
       itxn_submit
       // end inner_txn
-    l3_end: // end
+    l2_end: // end
   
   // exit(1)
   pushint 1
@@ -609,6 +579,7 @@ trade:
   box_del
   pop // discarding value for _
   
+  // trade reduces min_balance
   // send reply and unused gas to A
   // int clear_gas_amount = clear_gas() [slot 8]
   callsub __func__clear_gas
@@ -750,45 +721,45 @@ update_params:
 
 // func clear_gas() int:
 __func__clear_gas:
-// int y [slot 23]
-// int own_account_balance [slot 24]
+// int y [slot 22]
+// int own_account_balance [slot 23]
 // y, own_account_balance = acct_params_get(AcctBalance, Global.CurrentApplicationAddress)
 global CurrentApplicationAddress
 acct_params_get AcctBalance
-store 23 // y
-store 24 // own_account_balance
+store 22 // y
+store 23 // own_account_balance
 // log(itob(own_account_balance))
-// int own_account_min_balance [slot 25]
+// int own_account_min_balance [slot 24]
 // y, own_account_min_balance = acct_params_get(AcctMinBalance, Global.CurrentApplicationAddress)
 global CurrentApplicationAddress
 acct_params_get AcctMinBalance
-store 23 // y
-store 25 // own_account_min_balance
+store 22 // y
+store 24 // own_account_min_balance
 // log(itob(own_account_min_balance))
 
 // return own_account_balance - own_account_min_balance
-load 24 // own_account_balance
-load 25 // own_account_min_balance
+load 23 // own_account_balance
+load 24 // own_account_min_balance
 -
 retsub
 
 // func get_bid(bid_id: bytes) bytes:
 __func__get_bid:
-store 26 // bid_id
-// int bid_exists [slot 27]
-// bytes bid_contents [slot 28]
+store 25 // bid_id
+// int bid_exists [slot 26]
+// bytes bid_contents [slot 27]
 // bid_exists, bid_contents = box_get(bid_id)
-load 26 // bid_id
+load 25 // bid_id
 box_get
-store 27 // bid_exists
-store 28 // bid_contents
+store 26 // bid_exists
+store 27 // bid_contents
 // assert(bid_exists == 1)
-load 27 // bid_exists
+load 26 // bid_exists
 pushint 1
 ==
 assert
 // return extract3(bid_contents, 0, BIDWITHOUTDATASIZE)
-load 28 // bid_contents
+load 27 // bid_contents
 pushint 0
 pushint 168 // BIDWITHOUTDATASIZE
 extract3
@@ -796,19 +767,19 @@ retsub
 
 // func opt_in(asset_id: int):
 __func__opt_in:
-store 29 // asset_id
-// int is_opted_in [slot 30]
+store 28 // asset_id
+// int is_opted_in [slot 29]
 // is_opted_in, _ = asset_holding_get(AssetBalance, Global.CurrentApplicationAddress, asset_id)
 global CurrentApplicationAddress
-load 29 // asset_id
+load 28 // asset_id
 asset_holding_get AssetBalance
-store 30 // is_opted_in
+store 29 // is_opted_in
 pop // discarding value for _
 // if is_opted_in == 0:
-  load 30 // is_opted_in
+  load 29 // is_opted_in
   pushint 0
   ==
-  bz l4_end
+  bz l3_end
   // then:
     // inner_txn:
     itxn_begin
@@ -822,93 +793,93 @@ pop // discarding value for _
       pushint 0
       itxn_field AssetAmount
       // XferAsset: asset_id
-      load 29 // asset_id
+      load 28 // asset_id
       itxn_field XferAsset
       // Fee: 0
       pushint 0
       itxn_field Fee
     itxn_submit
     // end inner_txn
-  l4_end: // end
+  l3_end: // end
 // return
 retsub
 
 // func check_create_bid(fx_call_ix: int, algo_send_ix: int, app_call_ix: int, asset_send_ix: int):
 __func__check_create_bid:
-store 31 // asset_send_ix
-store 32 // app_call_ix
-store 33 // algo_send_ix
-store 34 // fx_call_ix
+store 30 // asset_send_ix
+store 31 // app_call_ix
+store 32 // algo_send_ix
+store 33 // fx_call_ix
 // assert(Gtxn[fx_call_ix].TypeEnum == Appl)
-load 34 // fx_call_ix
+load 33 // fx_call_ix
 gtxns TypeEnum
 pushint 6 // Appl
 ==
 assert
 // assert(Gtxn[algo_send_ix].TypeEnum == Pay)
-load 33 // algo_send_ix
+load 32 // algo_send_ix
 gtxns TypeEnum
 pushint 1 // Pay
 ==
 assert
 // assert(Gtxn[app_call_ix].TypeEnum == Appl) # NOT NEEDED, as we are in this Appl
 // assert(Gtxn[asset_send_ix].TypeEnum == Axfer)
-load 31 // asset_send_ix
+load 30 // asset_send_ix
 gtxns TypeEnum
 pushint 4 // Axfer
 ==
 assert
 
 // assert(Gtxn[fx_call_ix].Sender == Gtxn[asset_send_ix].Sender)
-load 34 // fx_call_ix
+load 33 // fx_call_ix
 gtxns Sender
-load 31 // asset_send_ix
+load 30 // asset_send_ix
 gtxns Sender
 ==
 assert
 // assert(Txn.Sender == Gtxn[asset_send_ix].Sender)
 txn Sender
-load 31 // asset_send_ix
+load 30 // asset_send_ix
 gtxns Sender
 ==
 assert
 // assert(Gtxn[algo_send_ix].Sender == Gtxn[asset_send_ix].Sender)
-load 33 // algo_send_ix
+load 32 // algo_send_ix
 gtxns Sender
-load 31 // asset_send_ix
+load 30 // asset_send_ix
 gtxns Sender
 ==
 assert
 
 // assert(Gtxn[asset_send_ix].AssetReceiver == Global.CurrentApplicationAddress)
-load 31 // asset_send_ix
+load 30 // asset_send_ix
 gtxns AssetReceiver
 global CurrentApplicationAddress
 ==
 assert
 // assert(Gtxn[algo_send_ix].Receiver == Global.CurrentApplicationAddress)
-load 33 // algo_send_ix
+load 32 // algo_send_ix
 gtxns Receiver
 global CurrentApplicationAddress
 ==
 assert
 
 // assert(Gtxn[fx_call_ix].ApplicationID == FX_APP)
-load 34 // fx_call_ix
+load 33 // fx_call_ix
 gtxns ApplicationID
 pushint 178969021 // FX_APP
 ==
 assert
 // assert(Gtxn[asset_send_ix].XferAsset == Gtxn[fx_call_ix].Assets[0])
-load 31 // asset_send_ix
+load 30 // asset_send_ix
 gtxns XferAsset
-load 34 // fx_call_ix
+load 33 // fx_call_ix
 gtxnsa Assets 0
 ==
 assert
 // assert(Txn.GroupIndex == app_call_ix)
 txn GroupIndex
-load 32 // app_call_ix
+load 31 // app_call_ix
 ==
 assert
 
@@ -942,17 +913,17 @@ __func__check_trade:
   global GroupSize
   pushint 1
   ==
-  bz l5_elif_0
+  bz l4_elif_0
   // then:
     // return
     retsub
-  b l5_end
-  l5_elif_0:
+  b l4_end
+  l4_elif_0:
   // elif Global.GroupSize == 2:
   global GroupSize
   pushint 2
   ==
-  bz l5_else
+  bz l4_else
     
     // assert(Gtxn[0].TypeEnum == Axfer)
     gtxn 0 TypeEnum
@@ -982,13 +953,13 @@ __func__check_trade:
     ==
     assert
     
-  b l5_end
-  l5_else:
+  b l4_end
+  l4_else:
   // else:
     // exit(0)
     pushint 0
     return
-  l5_end: // end
+  l4_end: // end
 
 // return
 retsub
@@ -1005,25 +976,25 @@ retsub
 
 // func get_params(b: bytes) bytes:
 __func__get_params:
-store 35 // b
+store 34 // b
 // from box if exists
-// bytes p [slot 36]
-// int p_exists [slot 37]
+// bytes p [slot 35]
+// int p_exists [slot 36]
 // p_exists, p = box_get(b)
-load 35 // b
+load 34 // b
 box_get
-store 37 // p_exists
-store 36 // p
+store 36 // p_exists
+store 35 // p
 // if p_exists == 1:
-  load 37 // p_exists
+  load 36 // p_exists
   pushint 1
   ==
-  bz l6_end
+  bz l5_end
   // then:
     // return p
-    load 36 // p
+    load 35 // p
     retsub
-  l6_end: // end
+  l5_end: // end
 
 // default params
 
@@ -1034,33 +1005,33 @@ itob
 pushint 1
 itob
 concat
-store 36 // p
+store 35 // p
 // p = concat(p, itob(1))
-load 36 // p
+load 35 // p
 pushint 1
 itob
 concat
-store 36 // p
+store 35 // p
 // min
 // p = concat(p, itob(1))
-load 36 // p
+load 35 // p
 pushint 1
 itob
 concat
-store 36 // p
+store 35 // p
 // description
 // p = concat(p, "00000000000000000000000000000000")
-load 36 // p
+load 35 // p
 pushbytes "00000000000000000000000000000000"
 concat
-store 36 // p
+store 35 // p
 // encryption_public_key
 // p = concat(p, "00000000000000000000000000000000")
-load 36 // p
+load 35 // p
 pushbytes "00000000000000000000000000000000"
 concat
-store 36 // p
+store 35 // p
 
 // return p
-load 36 // p
+load 35 // p
 retsub

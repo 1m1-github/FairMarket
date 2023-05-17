@@ -57,7 +57,7 @@ The _importance_ $II$ will be explained later. It is a setting of the _seller_ d
 \ \
 == Bid
 \ \
-Each _bid_ $B$ looks as follows:
+Each _bid_ $B$ is defined as follows:
 
 $ B = (T, A, PP) $
 
@@ -211,7 +211,7 @@ that the #emph[bid]s can be sorted chronologically.
 \ \ 
 Given this chronological ordering, let's group the #emph[bid]s by creating subsequences of constant _parameters_:
 
-$ underbrace(B_1 + ... + B_i_1, PP_1), underbrace(B_(i_1+1) + ... + B_i_2, PP_2), ..., underbrace(B_(i_G_N+1) + ... + B_N, PP_G_N) $
+$ underbrace(B_1\, ...\, B_i_1, PP_1), underbrace(B_(i_1+1)\, ...\, B_i_2, PP_2), ..., underbrace(B_(i_G_N+1)\, ...\, B_N, PP_G_N) $
 
 that is, changing the _parameters_ $PP$ fixes the current order.
 \ \

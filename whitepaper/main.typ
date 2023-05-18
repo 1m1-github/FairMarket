@@ -8,7 +8,7 @@
     ),
   ),
   abstract: "This paper describes a novel, multi-dimensional, infinitely inclusive market model. The described model yields infinite types of new market dynamics and traditional markets as special cases, based on very few parameters. As the market allows any supply of arbitrarily small or large value to be traded in any currency, incl. subjective value currencies, any resulting liquid market must then find the fairest value of the supply.",
-  //bibliography-file: "refs.bib",
+  bibliography-file: "refs.bib",
 )
 #show link: underline
 #set heading(level: 1, numbering: "I")
@@ -281,7 +281,7 @@ about the worst case.
 Worst case rank is deterministic if we allow it to be $infinity$, which it is for _HR_, _SUBJ_, _LURK_.
 \ \ 
 _CHR_
-The above algorithm keeps the worst case _rank_ for _CHR_ #emph[bid]s [deterministic and finite]().
+The above algorithm keeps the worst case _rank_ for _CHR_ #emph[bid]s #link(<deterministic-and-finite>)[deterministic and finite].
 
 This is mainly because each $II$ is finite, the number of #emph[bid]s is finite, internal _CHR_ order is total and deterministic and change of _parameters_ locks all existing objective bids in a total order.
 
@@ -371,7 +371,7 @@ By changing the parameters, minimum $underline(M)$ and importance $II$, the sell
 \ \
 An _economy_ is a set of #emph[trade]s. The event of a _bid_ getting _serviced_ is a _trade_. If this market model provides the _fairest_ valuation and with it the _fairest_ trade, then the resulting _economy_ is _fairest_ _economy_ possible.
 \ \
-Micro-economics teaches us that (specilization and) *fair* trading improves the value of all parties.
+Micro-economics teaches us that (specilization and) *fair* trading improves the value of all parties @adamsmith @davidricardo.
 
 \ \
 == Maximum value $arrow.l.r.double$ Supply = _time_
@@ -448,9 +448,7 @@ This is a service guarantee for those bidding the minimum (chrony). A highroller
 
 \ \
 == deterministic and finite <deterministic-and-finite>
-should be written up formally
-see fairmarket.js in FairInbox for formalism
-since non availability of a category is what triggers the only change possible in ordering, and this kind of event improves every bids ordering, descreasing the wait time. thus max wait time is deterministic. we have the formula. see dart code. 
+Should be written up formally. Since non availability of a category is what triggers the only change possible in ordering, and this kind of event improves every bids ordering, descreasing the wait time. Thus max wait time is deterministic.
 
 \ \
 == auditability is better <auditability-is-better>
@@ -462,15 +460,11 @@ Based on my own intensive research on highly noisy and highly dimensional optimi
 
 \ \
 == objective vs subjective value <objective-vs-subjective-value>
-Any currency can be said to have objective value if there exists a liquid market to exchange at least the base unit of this currency into another objective value currency. We assume that a community can agree on at least one currency that is declared objective.
-
-Every other currency is called subjective. 
+Any currency can be said to have objective value if there exists a liquid market to exchange at least the base unit of this currency into another objective value currency. We assume that a community can agree on at least one currency that is declared objective. Any non-objective value currency is called subjective. 
 
 \ \
 == currency <currency>
-We define a currency as any bundle of energy and information that can be transmitted from one entity to another, incl. bundles containing no energy (only information) xor only energy (no information).
-
-This provides the most generic definition possible.
+We define a currency as any bundle of energy and information that can be transmitted from one entity to another. This provides the most generic definition possible.
 
 \ \
 == projective infinity <projective-infinity>
@@ -482,13 +476,11 @@ Objective bids already have deterministic ordering. If subjective bids are prese
 
 \ \
 == deterministic <deterministic>
-means that the outputs will not change if the inputs do not change
+Means that the outputs will not change if the inputs do not change
 
 \ \
 == live in the now <live-in-the-now>
 One could even replace appointments with such a market for ones **time**. Whenever you choose to interact with a person, instead of consulting an appointment schedule, consult the market. Importance and urgency are all expressed via the energy and information contained in every bid.
-
-Btw, time can e.g. easily be supplied via live media streams.
 
 \ \
 == acknowledgement <acknowledgement>

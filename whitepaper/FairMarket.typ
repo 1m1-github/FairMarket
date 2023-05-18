@@ -1,3 +1,4 @@
+// typst compile whitepaper/FairMarket.typ whitepaper/FairMarket.pdf
 #import "template.typ": *
 #show: ams-article.with(
   title: "FairMarket ~ the provably fairest and most inclusive market model",

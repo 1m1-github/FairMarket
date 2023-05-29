@@ -181,10 +181,6 @@ main:
   ==
   bnz update_params
   err // unexpected value
-  
-  // exit(0)
-  pushint 0
-  return
 
 // block create_bid
 create_bid:
@@ -966,11 +962,53 @@ retsub
 
 // func check_update_params():
 __func__check_update_params:
-// assert(Global.GroupSize == 1)
-global GroupSize
-pushint 1
-==
-assert
+// if Global.GroupSize == 1:
+  global GroupSize
+  pushint 1
+  ==
+  bz l5_elif_0
+  // then:
+    // return
+    retsub
+  b l5_end
+  l5_elif_0:
+  // elif Global.GroupSize == 2:
+  global GroupSize
+  pushint 2
+  ==
+  bz l5_else
+    
+    // assert(Gtxn[0].TypeEnum == Pay)
+    gtxn 0 TypeEnum
+    pushint 1 // Pay
+    ==
+    assert
+    // assert(Gtxn[0].Amount == 53700)
+    // assert(Gtxn[0].Sender == Txn.Sender)
+    gtxn 0 Sender
+    txn Sender
+    ==
+    assert
+    // assert(Gtxn[0].Receiver == Global.CurrentApplicationAddress)
+    gtxn 0 Receiver
+    global CurrentApplicationAddress
+    ==
+    assert
+    
+    // assert(Txn.GroupIndex == 1)
+    txn GroupIndex
+    pushint 1
+    ==
+    assert
+    
+  b l5_end
+  l5_else:
+  // else:
+    // exit(0)
+    pushint 0
+    return
+  l5_end: // end
+
 // return
 retsub
 
@@ -989,12 +1027,12 @@ store 35 // p
   load 36 // p_exists
   pushint 1
   ==
-  bz l5_end
+  bz l6_end
   // then:
     // return p
     load 35 // p
     retsub
-  l5_end: // end
+  l6_end: // end
 
 // default params
 

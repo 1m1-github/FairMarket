@@ -125,8 +125,6 @@ block main:
         "trade": trade
         "update_params": update_params
     end
-
-    exit(0)
 end
 
 block create_bid:
@@ -419,7 +417,21 @@ func check_trade():
 end
 
 func check_update_params():
-    assert(Global.GroupSize == 1)
+    if Global.GroupSize == 1:
+        return
+    elif Global.GroupSize == 2:
+
+        assert(Gtxn[0].TypeEnum == Pay)
+        # assert(Gtxn[0].Amount == 53700)
+        assert(Gtxn[0].Sender == Txn.Sender)
+        assert(Gtxn[0].Receiver == Global.CurrentApplicationAddress)
+        
+        assert(Txn.GroupIndex == 1)
+
+    else:
+        exit(0)
+    end
+    
     return
 end
 

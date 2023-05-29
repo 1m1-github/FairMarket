@@ -3,7 +3,6 @@
 
 # set env vars for terminal
 export ALGORAND_DATA="$HOME/algorand/testnetdata"
-export WALLET=Fair
 export TEALISH_DIR=./Algorand
 export TEAL_DIR=./Algorand/build
 export TXNS_DIR=./txns
@@ -80,13 +79,21 @@ goal clerk dryrun -t $TXNS_DIR/trade.stxn --dryrun-dump -o $TXNS_DIR/dryrun.json
 tealdbg debug $TEAL_DIR/$APPROVAL_FILE_NAME.teal -d $TXNS_DIR/dryrun.json --group-index 1 --mode application
 
 # update params
-export CHRONY_IMPORTANCE="int:1"
-export HIGHROLLER_IMPORTANCE="int:1"
+export CHRONY_IMPORTANCE="int:3"
+export HIGHROLLER_IMPORTANCE="int:2"
 export SUBJECTIVE_IMPORTANCE="int:1"
 export MIN="int:1"
 export DESCRIPTION="str:DESCRIPTIONDESCRIPTIONDESCRIPTIO"
 export ENCRYPTION_PUBLIC_KEY="b64:y2Trlfq3rEvjm42egC3dXgxx5riOZkh94GwPl4dmrFE="
-goal app call --from $B --app-id $FAIRMARKET_APP --app-arg "str:update_params" --app-arg $CHRONY_IMPORTANCE --app-arg $HIGHROLLER_IMPORTANCE --app-arg $SUBJECTIVE_IMPORTANCE --app-arg $MIN --app-arg $DESCRIPTION --app-arg $ENCRYPTION_PUBLIC_KEY --box "addr:$B"
+# first time needs gas for new box
+goal clerk send --from $A --to $FAIRMARKET_ACCOUNT --amount 53700 --out $TXNS_DIR/update_params_algo_send.txn --fee 0
+goal app call --from $A --app-id $FAIRMARKET_APP --app-arg "str:update_params" --app-arg $CHRONY_IMPORTANCE --app-arg $HIGHROLLER_IMPORTANCE --app-arg $SUBJECTIVE_IMPORTANCE --app-arg $MIN --app-arg $DESCRIPTION --app-arg $ENCRYPTION_PUBLIC_KEY --box "addr:$A" --out $TXNS_DIR/update_params_app_call.txn --fee 2000
+cat $TXNS_DIR/update_params_algo_send.txn $TXNS_DIR/update_params_app_call.txn > $TXNS_DIR/combined.txn
+goal clerk group --infile $TXNS_DIR/combined.txn --outfile $TXNS_DIR/update_params.txn
+goal clerk sign --infile $TXNS_DIR/update_params.txn --outfile $TXNS_DIR/update_params.stxn
+goal clerk rawsend --filename $TXNS_DIR/update_params.stxn
+# after first time no new box
+goal app call --from $A --app-id $FAIRMARKET_APP --app-arg "str:update_params" --app-arg $CHRONY_IMPORTANCE --app-arg $HIGHROLLER_IMPORTANCE --app-arg $SUBJECTIVE_IMPORTANCE --app-arg $MIN --app-arg $DESCRIPTION --app-arg $ENCRYPTION_PUBLIC_KEY --box "addr:$A" --out $TXNS_DIR/update_params_app_call.stxn
 
 # tealish compile $TEALISH_DIR/$APPROVAL_FILE_NAME.tl
 # goal app update --from=$CREATOR --app-id=$FAIRMARKET_APP --approval-prog $TEAL_DIR/$APPROVAL_FILE_NAME.teal --clear-prog $TEAL_DIR/$CLEAR_FILE_NAME.teal

@@ -1,1 +1,1 @@
-white paper: https://github.com/1m1-github/FairMarket/blob/main/whitepaper/main.pdf
+white paper: https://zenodo.org/record/7948669

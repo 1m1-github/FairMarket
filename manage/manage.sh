@@ -2,16 +2,19 @@
 # chrome://inspect/#devices
 
 # set env vars for terminal
-export ALGORAND_DATA="$HOME/algorand/testnetdata"
+# export ALGORAND_DATA="$HOME/algorand/testnetdata"
+export ALGORAND_DATA="$HOME/algorand/data"
 export TEALISH_DIR=./Algorand
 export TEAL_DIR=./Algorand/build
 export TXNS_DIR=./txns
 export APPROVAL_FILE_NAME=state_approval_program
 export CLEAR_FILE_NAME=state_clear_program
-export CREATOR=HQMMGGF3KJRPTEZV6GKGT6PNQJBZWUBIQMHG4XBVGBIV2E2V4LWOFHVEAA
-export A=HQMMGGF3KJRPTEZV6GKGT6PNQJBZWUBIQMHG4XBVGBIV2E2V4LWOFHVEAA
-export B=5B3SUGACYLICWU3DHXYCS45NDNEFZCZM4MCKCKQA3DLGKZEOFQR74HLGEU
-export FX_APP=178969021
+export SIGNER=IMIFDF2LS4DJB4K56TBOTANVBTIE2CPM32BTLWSCTZQU7ASRDM4CVIU5VE
+export CREATOR=2I2IXTP67KSNJ5FQXHUJP5WZBX2JTFYEBVTBYFF3UUJ3SQKXSZ3QHZNNPY
+export A=
+export B=
+# export FX_APP=178969021
+export FX_APP=1118290368
 
 # start goal, create wallet and account
 goal node start
@@ -27,10 +30,12 @@ tealish compile $TEALISH_DIR/$APPROVAL_FILE_NAME.tl
 tealish compile $TEALISH_DIR/$CLEAR_FILE_NAME.tl
 
 # create app
-goal app create --creator $CREATOR --approval-prog $TEAL_DIR/$APPROVAL_FILE_NAME.teal --clear-prog $TEAL_DIR/$CLEAR_FILE_NAME.teal --global-byteslices 0 --global-ints 0 --local-byteslices 0 --local-ints 0
-export FAIRMARKET_APP=202947056
+goal app create --creator $CREATOR --approval-prog $TEAL_DIR/$APPROVAL_FILE_NAME.teal --clear-prog $TEAL_DIR/$CLEAR_FILE_NAME.teal --global-byteslices 0 --global-ints 0 --local-byteslices 0 --local-ints 0 --signer $SIGNER
+# export FAIRMARKET_APP=202947056
+export FAIRMARKET_APP=1119133357
 goal app info --app-id $FAIRMARKET_APP
-export FAIRMARKET_ACCOUNT=7XDQJVL4XBHQSKF5FVUDMJ4U3W4UCQ5DO7JWAOCPRFZN2AEEQIXV27YE5I
+# export FAIRMARKET_ACCOUNT=7XDQJVL4XBHQSKF5FVUDMJ4U3W4UCQ5DO7JWAOCPRFZN2AEEQIXV27YE5I
+export FAIRMARKET_ACCOUNT=XHVT4KLKSUFJ6Z2FQKGFEHTXYQCFOSBL3LSPMJBFKHNVGYH5IHLN72LC7Y
 
 # update app
 tealish compile $TEALISH_DIR/$APPROVAL_FILE_NAME.tl

@@ -34,6 +34,7 @@
 
 // size=3*32+9*8=168
 
+// const int FX_APP_TEST = 178969021
 
 // FEE_N/FEE_D = FEE is the fraction of the currency_amount kept in the contract
 // currently set to 1/10
@@ -863,7 +864,7 @@ assert
 // assert(Gtxn[fx_call_ix].ApplicationID == FX_APP)
 load 33 // fx_call_ix
 gtxns ApplicationID
-pushint 178969021 // FX_APP
+pushint 1118290368 // FX_APP
 ==
 assert
 // assert(Gtxn[asset_send_ix].XferAsset == Gtxn[fx_call_ix].Assets[0])

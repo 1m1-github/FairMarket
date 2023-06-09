@@ -16,6 +16,7 @@ export FX_APP=1118290368
 
 # start goal, create wallet and account
 goal node start
+goal node stop
 goal node status
 goal node end
 goal wallet new $WALLET
@@ -35,7 +36,7 @@ export FAIRMARKET_ACCOUNT=XHVT4KLKSUFJ6Z2FQKGFEHTXYQCFOSBL3LSPMJBFKHNVGYH5IHLN72
 
 # update app
 tealish compile $TEALISH_DIR/$APPROVAL_FILE_NAME.tl
-goal app update --from=$CREATOR --app-id=$FAIRMARKET_APP --approval-prog $TEAL_DIR/$APPROVAL_FILE_NAME.teal --clear-prog $TEAL_DIR/$CLEAR_FILE_NAME.teal
+goal app update --from=$CREATOR --app-id=$FAIRMARKET_APP --approval-prog $TEAL_DIR/$APPROVAL_FILE_NAME.teal --clear-prog $TEAL_DIR/$CLEAR_FILE_NAME.teal  --signer $SIGNER
 
 # API
 #####
@@ -51,7 +52,7 @@ export DATA="hello world"
 export BID_ID="b64:ZiGUT+KTNrHkFi6eInnDrk2oI7fowTrezkdKs2OEXpo="
 goal app call --from $A --app-id $FX_APP --foreign-app $FX_LP_APP --foreign-asset $CURRENCY_ID --app-account $FX_LP_ACCOUNT --out $TXNS_DIR/FX.txn --fee 0
 goal clerk send --from $A --to $FAIRMARKET_ACCOUNT --amount 86900 --out $TXNS_DIR/algo_send.txn --fee 0
-goal app call --from $A --app-id $FAIRMARKET_APP --foreign-asset $CURRENCY_ID --app-arg "str:create_bid" --app-arg "addr:$B" --app-arg $BID_ID --box $BID_ID --box "addr:$B" --note $B.$DATA --out $TXNS_DIR/app_call.txn --fee 4000
+goal app call --from $A --app-id $FAIRMARKET_APP --foreign-asset $CURRENCY_ID --app-arg "str:create_bid" --app-arg "addr:$B" --app-arg $BID_ID --box $BID_ID --box "addr:$B" --note $B.$DATA --out $TXNS_DIR/app_call.txn --fee 5000
 goal asset send --from $A --to $FAIRMARKET_ACCOUNT --amount $CURRENCY_AMOUNT --assetid $CURRENCY_ID --out $TXNS_DIR/asset_send.txn --fee 0
 cat $TXNS_DIR/FX.txn $TXNS_DIR/algo_send.txn $TXNS_DIR/app_call.txn $TXNS_DIR/asset_send.txn > $TXNS_DIR/combined.txn
 goal clerk group --infile $TXNS_DIR/combined.txn --outfile $TXNS_DIR/create_bid.txn

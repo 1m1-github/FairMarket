@@ -34,7 +34,6 @@
 
 // size=3*32+9*8=168
 
-// const int FX_APP_TEST = 178969021
 
 // FEE_N/FEE_D = FEE is the fraction of the currency_amount kept in the contract
 // currently set to 1/10
@@ -206,11 +205,11 @@ create_bid:
   // int algo_send_ix = 1 [slot 3]
   pushint 1
   store 3 // algo_send_ix
-  // int asset_send_ix = 2 [slot 4]
-  pushint 2
-  store 4 // asset_send_ix
-  // int app_call_ix = 3 [slot 5]
+  // int asset_send_ix = 3 [slot 4]
   pushint 3
+  store 4 // asset_send_ix
+  // int app_call_ix = 2 [slot 5]
+  pushint 2
   store 5 // app_call_ix
   
   // check_create_bid(fx_call_ix, algo_send_ix, app_call_ix, asset_send_ix)
@@ -847,9 +846,9 @@ pop // discarding value for _
       // Fee: 0
       pushint 0
       itxn_field Fee
-      // CloseOut: Txn.Sender
+      // AssetCloseTo: Txn.Sender
       txn Sender
-      itxn_field CloseOut
+      itxn_field AssetCloseTo
     itxn_submit
     // end inner_txn
   l4_end: // end
@@ -919,7 +918,7 @@ assert
 // assert(Gtxn[fx_call_ix].ApplicationID == FX_APP)
 load 35 // fx_call_ix
 gtxns ApplicationID
-pushint 1118290368 // FX_APP
+pushint 178969021 // FX_APP
 ==
 assert
 // assert(Gtxn[asset_send_ix].XferAsset == Gtxn[fx_call_ix].Assets[0])

@@ -59,7 +59,7 @@ struct BidWithoutData:
 end
 const int BIDWITHOUTDATASIZE = 168
 
-const int FX_APP = 1118290368
+const int FX_APP = 178969021
 
 # FEE_N/FEE_D = FEE is the fraction of the currency_amount kept in the contract
 # currently set to 1/10
@@ -124,7 +124,13 @@ block main:
         "cancel_bid": cancel_bid
         "trade": trade
         "update_params": update_params
+        "opt_out_asa": opt_out_asa
     end
+end
+
+block opt_out_asa:
+    opt_out(Txn.Assets[0])
+    exit(1)
 end
 
 block create_bid:
@@ -132,8 +138,8 @@ block create_bid:
     # indices
     int fx_call_ix = 0
     int algo_send_ix = 1
-    int app_call_ix = 2
     int asset_send_ix = 3
+    int app_call_ix = 2
 
     check_create_bid(fx_call_ix, algo_send_ix, app_call_ix, asset_send_ix)
     
@@ -359,6 +365,22 @@ func opt_in(asset_id: int):
             AssetAmount: 0
             XferAsset: asset_id
             Fee: 0
+        end
+    end
+    return
+end
+
+func opt_out(asset_id: int):
+    int is_opted_in
+    is_opted_in, _ = asset_holding_get(AssetBalance, Global.CurrentApplicationAddress, asset_id)
+    if is_opted_in == 1:
+        inner_txn:
+            TypeEnum: Axfer
+            AssetReceiver: Global.CurrentApplicationAddress
+            AssetAmount: 0
+            XferAsset: asset_id
+            Fee: 0
+            AssetCloseTo: Txn.Sender
         end
     end
     return

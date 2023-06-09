@@ -2,17 +2,16 @@
 # chrome://inspect/#devices
 
 # set env vars for terminal
-export ALGORAND_DATA="$HOME/algorand/data"
+export ALGORAND_DATA="$HOME/algorand/testnetdata"
 export TEALISH_DIR=./Algorand
 export TEAL_DIR=./Algorand/build
 export TXNS_DIR=./txns
-export APPROVAL_FILE_NAME=state_approval_program
+export APPROVAL_FILE_NAME=state_approval_program_testnet
 export CLEAR_FILE_NAME=state_clear_program
-export SIGNER=IMIFDF2LS4DJB4K56TBOTANVBTIE2CPM32BTLWSCTZQU7ASRDM4CVIU5VE
-export CREATOR=2I2IXTP67KSNJ5FQXHUJP5WZBX2JTFYEBVTBYFF3UUJ3SQKXSZ3QHZNNPY
-export A=
-export B=
-export FX_APP=1118290368
+export CREATOR=HQMMGGF3KJRPTEZV6GKGT6PNQJBZWUBIQMHG4XBVGBIV2E2V4LWOFHVEAA
+export A=HQMMGGF3KJRPTEZV6GKGT6PNQJBZWUBIQMHG4XBVGBIV2E2V4LWOFHVEAA
+export B=5B3SUGACYLICWU3DHXYCS45NDNEFZCZM4MCKCKQA3DLGKZEOFQR74HLGEU
+export FX_APP=178969021
 
 # start goal, create wallet and account
 goal node start
@@ -29,9 +28,9 @@ tealish compile $TEALISH_DIR/$CLEAR_FILE_NAME.tl
 
 # create app
 goal app create --creator $CREATOR --approval-prog $TEAL_DIR/$APPROVAL_FILE_NAME.teal --clear-prog $TEAL_DIR/$CLEAR_FILE_NAME.teal --global-byteslices 0 --global-ints 0 --local-byteslices 0 --local-ints 0 --signer $SIGNER
-export FAIRMARKET_APP=1119133357
+export FAIRMARKET_APP=202947056
 goal app info --app-id $FAIRMARKET_APP
-export FAIRMARKET_ACCOUNT=XHVT4KLKSUFJ6Z2FQKGFEHTXYQCFOSBL3LSPMJBFKHNVGYH5IHLN72LC7Y
+export FAIRMARKET_ACCOUNT=7XDQJVL4XBHQSKF5FVUDMJ4U3W4UCQ5DO7JWAOCPRFZN2AEEQIXV27YE5I
 
 # update app
 tealish compile $TEALISH_DIR/$APPROVAL_FILE_NAME.tl
@@ -43,15 +42,15 @@ goal app update --from=$CREATOR --app-id=$FAIRMARKET_APP --approval-prog $TEAL_D
 # create bid [A]
 export CURRENCY_CREATOR=VETIGP3I6RCUVLVYNDW5UA2OJMXB5WP6L6HJ3RWO2R37GP4AVETICXC55I
 export CURRENCY_ID=10458941
-export CURRENCY_AMOUNT=19
+export CURRENCY_AMOUNT=2
 export FX_LP_APP=148607000
 export FX_LP_ACCOUNT=UDFWT5DW3X5RZQYXKQEMZ6MRWAEYHWYP7YUAPZKPW6WJK3JH3OZPL7PO2Y
 export DATA="hello world"
 # BID_ID = hash($A$B$CURRENCY_ID$CURRENCY_AMOUNT$DATA)
-export BID_ID="b64:ZiGUT+KTNrHkFi6eInnDrk2oI7fowTrezkdKs2OEXpo="
+export BID_ID="b64:KIUIRV7FzMsZqfZ2eqQxoXqCUr6miZEtmm0jXrha+W8="
 goal app call --from $A --app-id $FX_APP --foreign-app $FX_LP_APP --foreign-asset $CURRENCY_ID --app-account $FX_LP_ACCOUNT --out $TXNS_DIR/FX.txn --fee 0
 goal clerk send --from $A --to $FAIRMARKET_ACCOUNT --amount 86900 --out $TXNS_DIR/algo_send.txn --fee 0
-goal app call --from $A --app-id $FAIRMARKET_APP --foreign-asset $CURRENCY_ID --app-arg "str:create_bid" --app-arg "addr:$B" --app-arg $BID_ID --box $BID_ID --box "addr:$B" --note $B.$DATA --out $TXNS_DIR/app_call.txn --fee 4000
+goal app call --from $A --app-id $FAIRMARKET_APP --foreign-asset $CURRENCY_ID --app-arg "str:create_bid" --app-arg "addr:$B" --app-arg $BID_ID --box $BID_ID --box "addr:$B" --note $B.$DATA --out $TXNS_DIR/app_call.txn --fee 5000
 goal asset send --from $A --to $FAIRMARKET_ACCOUNT --amount $CURRENCY_AMOUNT --assetid $CURRENCY_ID --out $TXNS_DIR/asset_send.txn --fee 0
 cat $TXNS_DIR/FX.txn $TXNS_DIR/algo_send.txn $TXNS_DIR/app_call.txn $TXNS_DIR/asset_send.txn > $TXNS_DIR/combined.txn
 goal clerk group --infile $TXNS_DIR/combined.txn --outfile $TXNS_DIR/create_bid.txn
@@ -114,3 +113,8 @@ goal app box list --app-id $FAIRMARKET_APP
 goal app box info --app-id $FAIRMARKET_APP --name $BID_ID
 
 goal account info --address $FAIRMARKET_ACCOUNT
+
+# opt-out market from asa to test new asa
+# goal asset send -a 0 -f $A -t $A -c $B --assetid=10458941
+# goal asset send -a 0 -f $A -t $A --assetid=10458941
+goal app call --from $A --app-id $FAIRMARKET_APP --foreign-asset $CURRENCY_ID --app-arg "str:opt_out_asa" --fee 2000

@@ -59,7 +59,10 @@ struct BidWithoutData:
 end
 const int BIDWITHOUTDATASIZE = 168
 
-const int FX_APP = 1118290368
+ # TESTNET
+const int FX_APP = 178969021
+ # MAINNET
+# const int FX_APP = 1118290368
 
 # FEE_N/FEE_D = FEE is the fraction of the currency_amount kept in the contract
 # currently set to 1/10
@@ -110,6 +113,7 @@ end
 ############
 
 block main:
+
     # safety
     int e = Global.GroupSize
     for i in 0:e:
@@ -144,10 +148,9 @@ block create_bid:
     bytes time_bytes = itob(Global.LatestTimestamp)
     bytes bid = time_bytes
 
-    # A, b = B
+    # a = A, b = B
     bytes a = Txn.Sender
     bid = concat(bid, a)
-
     bytes b = Txn.ApplicationArgs[1]
     bid = concat(bid, b)
     
@@ -177,10 +180,11 @@ block create_bid:
     bid = concat(bid, p.encryption_public_key)
 
     # data
-    # first 58 bytes of Txn.Note is B as string
-    # next 32 bytes of Txn.Note is bid_id as string
-    # +1's are for the dots
-    bytes data = extract(92, 0, Txn.Note)
+    # first 32 bytes of Gtxn[asset_send_ix].Note is B
+    # +1 for .
+    # next 32 bytes of Gtxn[asset_send_ix].Note is BID_ID
+    # +1 for .
+    bytes data = extract(66, 0, Gtxn[asset_send_ix].Note)
     bid = concat(bid, data)
 
     # calc bid_id
@@ -192,13 +196,16 @@ block create_bid:
     bid_id_prehash = concat(bid_id_prehash, data)
     bytes bid_id = sha512_256(bid_id_prehash)
 
-    # log(Txn.Sender)
-    # log(b)
-    # log(currency_id_bytes)
-    # log(currency_amount_bytes)
-    # log(data)
-    # log(bid_id_prehash)
-    # log(bid_id)
+    log(Txn.Sender)
+    log(b)
+    log(currency_id_bytes)
+    log(currency_amount_bytes)
+    log(data)
+    log(itob(len(data)))
+    log(bid_id_prehash)
+    log(itob(len(bid_id_prehash)))
+    log(bid_id)
+    log(itob(len(bid_id)))
 
     # create box
     int box_existed = box_create(bid_id, len(bid))
@@ -440,11 +447,11 @@ end
 func get_params(b: bytes) bytes:
     # from box if exists
     bytes p
-    int p_exists
-    p_exists, p = box_get(b)
-    if p_exists == 1:
-        return p
-    end
+    # int p_exists
+    # p_exists, p = box_get(b)
+    # if p_exists == 1:
+    #     return p
+    # end
 
     # default params
 

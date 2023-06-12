@@ -34,6 +34,9 @@
 
 // size=3*32+9*8=168
 
+// TESTNET
+// MAINNET
+// const int FX_APP = 1118290368
 
 // FEE_N/FEE_D = FEE is the fraction of the currency_amount kept in the contract
 // currently set to 1/10
@@ -125,6 +128,7 @@ delete_app:
 
 // block main
 main:
+  
   // safety
   // int e = Global.GroupSize [slot 2]
   global GroupSize
@@ -221,7 +225,7 @@ create_bid:
   load 6 // time_bytes
   store 7 // bid
   
-  // A, b = B
+  // a = A, b = B
   // bytes a = Txn.Sender [slot 8]
   txn Sender
   store 8 // a
@@ -230,7 +234,6 @@ create_bid:
   load 8 // a
   concat
   store 7 // bid
-  
   // bytes b = Txn.ApplicationArgs[1] [slot 9]
   txna ApplicationArgs 1
   store 9 // b
@@ -333,12 +336,14 @@ create_bid:
   store 7 // bid
   
   // data
-  // first 58 bytes of Txn.Note is B as string
-  // next 32 bytes of Txn.Note is bid_id as string
-  // +1's are for the dots
-  // bytes data = extract(92, 0, Txn.Note) [slot 18]
-  txn Note
-  extract 92 0
+  // first 32 bytes of Gtxn[asset_send_ix].Note is B
+  // +1 for .
+  // next 32 bytes of Gtxn[asset_send_ix].Note is BID_ID
+  // +1 for .
+  // bytes data = extract(66, 0, Gtxn[asset_send_ix].Note) [slot 18]
+  load 5 // asset_send_ix
+  gtxns Note
+  extract 66 0
   store 18 // data
   // bid = concat(bid, data)
   load 7 // bid
@@ -375,12 +380,41 @@ create_bid:
   store 20 // bid_id
   
   // log(Txn.Sender)
+  txn Sender
+  log
   // log(b)
+  load 9 // b
+  log
   // log(currency_id_bytes)
+  load 10 // currency_id_bytes
+  log
   // log(currency_amount_bytes)
+  load 11 // currency_amount_bytes
+  log
   // log(data)
+  load 18 // data
+  log
+  // log(itob(len(data)))
+  load 18 // data
+  len
+  itob
+  log
   // log(bid_id_prehash)
+  load 19 // bid_id_prehash
+  log
+  // log(itob(len(bid_id_prehash)))
+  load 19 // bid_id_prehash
+  len
+  itob
+  log
   // log(bid_id)
+  load 20 // bid_id
+  log
+  // log(itob(len(bid_id)))
+  load 20 // bid_id
+  len
+  itob
+  log
   
   // create box
   // int box_existed = box_create(bid_id, len(bid)) [slot 21]
@@ -866,7 +900,7 @@ assert
 // assert(Gtxn[fx_call_ix].ApplicationID == FX_APP)
 load 33 // fx_call_ix
 gtxns ApplicationID
-pushint 1118290368 // FX_APP
+pushint 178969021 // FX_APP
 ==
 assert
 // assert(Gtxn[asset_send_ix].XferAsset == Gtxn[fx_call_ix].Assets[0])
@@ -1020,22 +1054,11 @@ __func__get_params:
 store 34 // b
 // from box if exists
 // bytes p [slot 35]
-// int p_exists [slot 36]
+// int p_exists
 // p_exists, p = box_get(b)
-load 34 // b
-box_get
-store 36 // p_exists
-store 35 // p
 // if p_exists == 1:
-  load 36 // p_exists
-  pushint 1
-  ==
-  bz l6_end
-  // then:
-    // return p
-    load 35 // p
-    retsub
-  l6_end: // end
+//     return p
+// end
 
 // default params
 

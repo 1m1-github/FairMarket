@@ -60,9 +60,9 @@ end
 const int BIDWITHOUTDATASIZE = 168
 
  # TESTNET
-const int FX_APP = 178969021
+# const int FX_APP = 178969021
  # MAINNET
-# const int FX_APP = 1118290368
+const int FX_APP = 1118290368
 
 # FEE_N/FEE_D = FEE is the fraction of the currency_amount kept in the contract
 # currently set to 1/10

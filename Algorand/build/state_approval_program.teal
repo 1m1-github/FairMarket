@@ -35,8 +35,8 @@
 // size=3*32+9*8=168
 
 // TESTNET
+// const int FX_APP = 178969021
 // MAINNET
-// const int FX_APP = 1118290368
 
 // FEE_N/FEE_D = FEE is the fraction of the currency_amount kept in the contract
 // currently set to 1/10
@@ -380,41 +380,15 @@ create_bid:
   store 20 // bid_id
   
   // log(Txn.Sender)
-  txn Sender
-  log
   // log(b)
-  load 9 // b
-  log
   // log(currency_id_bytes)
-  load 10 // currency_id_bytes
-  log
   // log(currency_amount_bytes)
-  load 11 // currency_amount_bytes
-  log
   // log(data)
-  load 18 // data
-  log
   // log(itob(len(data)))
-  load 18 // data
-  len
-  itob
-  log
   // log(bid_id_prehash)
-  load 19 // bid_id_prehash
-  log
   // log(itob(len(bid_id_prehash)))
-  load 19 // bid_id_prehash
-  len
-  itob
-  log
   // log(bid_id)
-  load 20 // bid_id
-  log
   // log(itob(len(bid_id)))
-  load 20 // bid_id
-  len
-  itob
-  log
   
   // create box
   // int box_existed = box_create(bid_id, len(bid)) [slot 21]
@@ -900,7 +874,7 @@ assert
 // assert(Gtxn[fx_call_ix].ApplicationID == FX_APP)
 load 33 // fx_call_ix
 gtxns ApplicationID
-pushint 178969021 // FX_APP
+pushint 1118290368 // FX_APP
 ==
 assert
 // assert(Gtxn[asset_send_ix].XferAsset == Gtxn[fx_call_ix].Assets[0])

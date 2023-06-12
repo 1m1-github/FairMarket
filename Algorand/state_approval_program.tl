@@ -178,7 +178,9 @@ block create_bid:
 
     # data
     # first 58 bytes of Txn.Note is B as string
-    bytes data = extract(59, 0, Txn.Note)
+    # next 32 bytes of Txn.Note is bid_id as string
+    # +1's are for the dots
+    bytes data = extract(92, 0, Txn.Note)
     bid = concat(bid, data)
 
     # calc bid_id

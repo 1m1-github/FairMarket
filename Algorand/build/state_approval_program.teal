@@ -334,9 +334,11 @@ create_bid:
   
   // data
   // first 58 bytes of Txn.Note is B as string
-  // bytes data = extract(59, 0, Txn.Note) [slot 18]
+  // next 32 bytes of Txn.Note is bid_id as string
+  // +1's are for the dots
+  // bytes data = extract(92, 0, Txn.Note) [slot 18]
   txn Note
-  extract 59 0
+  extract 92 0
   store 18 // data
   // bid = concat(bid, data)
   load 7 // bid

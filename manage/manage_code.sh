@@ -32,27 +32,13 @@ cat $TXNS_DIR/FX.txn $TXNS_DIR/algo_send.txn $TXNS_DIR/app_call.txn $TXNS_DIR/as
 goal clerk group --infile $TXNS_DIR/combined.txn --outfile $TXNS_DIR/create_bid.txn
 goal clerk sign --infile $TXNS_DIR/create_bid.txn --outfile $TXNS_DIR/create_bid.stxn
 goal clerk rawsend --filename $TXNS_DIR/create_bid.stxn
-# debug without boxes
-goal app call --from $A --app-id $FX_APP --foreign-app $FX_LP_APP --foreign-asset $CURRENCY_ID --app-account $FX_LP_ACCOUNT --out $TXNS_DIR/FX.txn --fee 0
-goal clerk send --from $A --to $FAIRMARKET_ACCOUNT --amount 100000 --out $TXNS_DIR/algo_send.txn --fee 0
-goal app call --from $A --app-id $FAIRMARKET_APP --foreign-asset $CURRENCY_ID --app-arg "str:create_bid" --app-arg "addr:$B" --app-arg "b64:$BID_ID" --out $TXNS_DIR/app_call.txn --fee 5000
-goal asset send --from $A --to $FAIRMARKET_ACCOUNT --amount $CURRENCY_AMOUNT --assetid $CURRENCY_ID --noteb64 $CREATE_NOTE_B64 --out $TXNS_DIR/asset_send.txn --fee 0
-cat $TXNS_DIR/FX.txn $TXNS_DIR/algo_send.txn $TXNS_DIR/app_call.txn $TXNS_DIR/asset_send.txn > $TXNS_DIR/combined.txn
-goal clerk group --infile $TXNS_DIR/combined.txn --outfile $TXNS_DIR/create_bid.txn
-goal clerk sign --infile $TXNS_DIR/create_bid.txn --outfile $TXNS_DIR/create_bid.stxn
-goal clerk dryrun -t $TXNS_DIR/create_bid.stxn --dryrun-dump --dryrun-accounts $CURRENCY_CREATOR -o $TXNS_DIR/dryrun.json
-tealdbg debug $TEAL_DIR/$APPROVAL_FILE_NAME.teal -d $TXNS_DIR/dryrun.json --group-index 2 --mode application
-
-# costs
-# opt-in: 0.001 + 0.1
-# box: reserve
 
 # cancel bid [bidder]
-goal app call --from $A --app-id $FAIRMARKET_APP --app-arg "str:cancel_bid" --app-arg $BID_ID --box $BID_ID --foreign-asset $CURRENCY_ID --fee 3000
+goal app call --from $A --app-id $FAIRMARKET_APP --app-arg "str:cancel_bid" --app-arg "b64:$BID_ID" --box "b64:$BID_ID" --foreign-asset $CURRENCY_ID --fee 3000
 
 # trade [seller]
 goal asset optin --account $B --assetid $CURRENCY_ID --fee 0 --out $TXNS_DIR/trade_optin.txn
-goal app call --from $B --app-id $FAIRMARKET_APP --app-account $A --foreign-asset $CURRENCY_ID --app-arg "str:trade" --app-arg $BID_ID --box $BID_ID --note $DATA --fee 4000 --out $TXNS_DIR/trade_app_call.txn
+goal app call --from $B --app-id $FAIRMARKET_APP --app-account $A --foreign-asset $CURRENCY_ID --app-arg "str:trade" --app-arg "b64:$BID_ID" --box "b64:$BID_ID" --note "str:$DATA_ANSWER" --fee 4000 --out $TXNS_DIR/trade_app_call.txn
 cat $TXNS_DIR/trade_optin.txn $TXNS_DIR/trade_app_call.txn > $TXNS_DIR/combined.txn
 goal clerk group --infile $TXNS_DIR/combined.txn --outfile $TXNS_DIR/trade.txn
 goal clerk sign --infile $TXNS_DIR/trade.txn --outfile $TXNS_DIR/trade.stxn
@@ -69,14 +55,9 @@ goal clerk rawsend --filename $TXNS_DIR/update_params.stxn
 # after first time no new box
 goal app call --from $A --app-id $FAIRMARKET_APP --app-arg "str:update_params" --app-arg $CHRONY_IMPORTANCE --app-arg $HIGHROLLER_IMPORTANCE --app-arg $SUBJECTIVE_IMPORTANCE --app-arg $MIN --app-arg $DESCRIPTION --app-arg $ENCRYPTION_PUBLIC_KEY --box "addr:$A" --out $TXNS_DIR/update_params_app_call.stxn
 
-# tealish compile $TEALISH_DIR/$APPROVAL_FILE_NAME.tl
-# goal app update --from=$CREATOR --app-id=$FAIRMARKET_APP --approval-prog $TEAL_DIR/$APPROVAL_FILE_NAME.teal --clear-prog $TEAL_DIR/$CLEAR_FILE_NAME.teal
-# goal app call --from $B --app-id $FAIRMARKET_APP --app-arg "str:update_params" --app-arg $CHRONY_IMPORTANCE --app-arg $HIGHROLLER_IMPORTANCE --app-arg $SUBJECTIVE_IMPORTANCE --app-arg $MIN --app-arg $DESCRIPTION --app-arg $ENCRYPTION_PUBLIC_KEY --out $TXNS_DIR/update_params.stxn
-# goal clerk dryrun -t $TXNS_DIR/update_params.stxn --dryrun-dump -o $TXNS_DIR/dryrun.json
-# tealdbg debug $TEAL_DIR/$APPROVAL_FILE_NAME.teal -d $TXNS_DIR/dryrun.json --group-index 0 --mode application
-# goal clerk rawsend --filename $TXNS_DIR/update_params.stxn
-
 #debug
+goal clerk dryrun -t $TXNS_DIR/update_params.stxn --dryrun-dump -o $TXNS_DIR/dryrun.json
+tealdbg debug $TEAL_DIR/$APPROVAL_FILE_NAME.teal -d $TXNS_DIR/dryrun.json --group-index 0 --mode application
 goal app read --app-id $FAIRMARKET_APP --global
 goal account info --address $FAIRMARKET_ACCOUNT --onlyShowAssetIds
 goal account info --address $A --onlyShowAssetIds

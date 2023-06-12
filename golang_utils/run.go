@@ -30,6 +30,10 @@ func main() {
 		)
 }
 
+func find_bid_outs(A string) {
+
+}
+
 func calc_create_bid_note(A, B string, curreny_id, curreny_amount int, data string) []byte {
 	B_bytes_with_checksum, _ := base32.StdEncoding.WithPadding(base32.NoPadding).DecodeString(B)
 	B_bytes := B_bytes_with_checksum[:32]

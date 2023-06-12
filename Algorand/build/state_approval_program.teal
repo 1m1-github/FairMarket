@@ -563,6 +563,10 @@ trade:
     pushint 72
     extract_uint64 // currency_id
     itxn_field XferAsset
+    // Note: bid.a
+    load 3 // bid
+    extract 8 32 // a
+    itxn_field Note
     // Fee: 0
     pushint 0
     itxn_field Fee

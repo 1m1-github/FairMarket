@@ -275,6 +275,7 @@ block trade:
         AssetReceiver: bid.b
         AssetAmount: currency_amount_for_b
         XferAsset: bid.currency_id
+        Note: bid.a
         Fee: 0
     end
 

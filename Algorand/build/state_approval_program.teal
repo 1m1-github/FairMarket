@@ -1052,9 +1052,9 @@ itob
 concat
 store 35 // p
 // min
-// p = concat(p, itob(1))
+// p = concat(p, itob(0))
 load 35 // p
-pushint 1
+pushint 0
 itob
 concat
 store 35 // p

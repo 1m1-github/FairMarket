@@ -450,7 +450,7 @@ func get_params(b: bytes) bytes:
     p = concat(itob(1), itob(1))
     p = concat(p, itob(1))
     # min
-    p = concat(p, itob(1))
+    p = concat(p, itob(0))
     # description
     p = concat(p, "00000000000000000000000000000000")
     # encryption_public_key

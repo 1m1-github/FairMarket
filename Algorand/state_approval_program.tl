@@ -404,10 +404,10 @@ func check_trade():
         assert(Gtxn[0].TypeEnum == Axfer)
         assert(Gtxn[0].AssetAmount == 0)
 
-        assert(Gtxn[0].AssetSender == Txn.Sender)
+        assert(Gtxn[0].AssetReceiver == Txn.Sender)
         assert(Txn.GroupIndex == 1)
 
-        assert(Gtxn[0].Assets[0] == Txn.Assets[0])
+        assert(Gtxn[0].XferAsset == Txn.Assets[0])
 
     else:
         exit(0)

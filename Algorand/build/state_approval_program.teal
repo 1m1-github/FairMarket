@@ -932,8 +932,8 @@ __func__check_trade:
     ==
     assert
     
-    // assert(Gtxn[0].AssetSender == Txn.Sender)
-    gtxn 0 AssetSender
+    // assert(Gtxn[0].AssetReceiver == Txn.Sender)
+    gtxn 0 AssetReceiver
     txn Sender
     ==
     assert
@@ -943,8 +943,8 @@ __func__check_trade:
     ==
     assert
     
-    // assert(Gtxn[0].Assets[0] == Txn.Assets[0])
-    gtxna 0 Assets 0
+    // assert(Gtxn[0].XferAsset == Txn.Assets[0])
+    gtxn 0 XferAsset
     txna Assets 0
     ==
     assert

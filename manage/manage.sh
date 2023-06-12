@@ -10,8 +10,8 @@ export APPROVAL_FILE_NAME=state_approval_program
 export CLEAR_FILE_NAME=state_clear_program
 export SIGNER=IMIFDF2LS4DJB4K56TBOTANVBTIE2CPM32BTLWSCTZQU7ASRDM4CVIU5VE
 export CREATOR=2I2IXTP67KSNJ5FQXHUJP5WZBX2JTFYEBVTBYFF3UUJ3SQKXSZ3QHZNNPY
-export A=
-export B=
+export A=HQMMGGF3KJRPTEZV6GKGT6PNQJBZWUBIQMHG4XBVGBIV2E2V4LWOFHVEAA
+export B=HQMMGGF3KJRPTEZV6GKGT6PNQJBZWUBIQMHG4XBVGBIV2E2V4LWOFHVEAA
 export FX_APP=1118290368
 
 # start goal, create wallet and account
@@ -43,7 +43,7 @@ goal app update --from=$CREATOR --app-id=$FAIRMARKET_APP --approval-prog $TEAL_D
 
 # create bid [A]
 export CURRENCY_CREATOR=VETIGP3I6RCUVLVYNDW5UA2OJMXB5WP6L6HJ3RWO2R37GP4AVETICXC55I
-export CURRENCY_ID=10458941
+export CURRENCY_ID=753137719
 export CURRENCY_AMOUNT=19
 export FX_LP_APP=148607000
 export FX_LP_ACCOUNT=UDFWT5DW3X5RZQYXKQEMZ6MRWAEYHWYP7YUAPZKPW6WJK3JH3OZPL7PO2Y
@@ -71,14 +71,12 @@ goal app call --from $A --app-id $FAIRMARKET_APP --app-arg "str:cancel_bid" --ap
 
 # trade [seller]
 export DATA="ty"
-goal asset optin --account $B --assetid $CURRENCY_ID --out $TXNS_DIR/trade_optin.txn
+goal asset optin --account $B --assetid $CURRENCY_ID --fee 0 --out $TXNS_DIR/trade_optin.txn
 goal app call --from $B --app-id $FAIRMARKET_APP --app-account $A --foreign-asset $CURRENCY_ID --app-arg "str:trade" --app-arg $BID_ID --box $BID_ID --note $DATA --fee 4000 --out $TXNS_DIR/trade_app_call.txn
 cat $TXNS_DIR/trade_optin.txn $TXNS_DIR/trade_app_call.txn > $TXNS_DIR/combined.txn
 goal clerk group --infile $TXNS_DIR/combined.txn --outfile $TXNS_DIR/trade.txn
 goal clerk sign --infile $TXNS_DIR/trade.txn --outfile $TXNS_DIR/trade.stxn
 goal clerk rawsend --filename $TXNS_DIR/trade.stxn
-goal clerk dryrun -t $TXNS_DIR/trade.stxn --dryrun-dump -o $TXNS_DIR/dryrun.json
-tealdbg debug $TEAL_DIR/$APPROVAL_FILE_NAME.teal -d $TXNS_DIR/dryrun.json --group-index 1 --mode application
 
 # update params
 export CHRONY_IMPORTANCE="int:3"

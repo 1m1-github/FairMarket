@@ -289,7 +289,6 @@ block trade:
         TypeEnum: Pay
         Receiver: bid.a
         Amount: clear_gas_amount
-        Note: Txn.Note
         Fee: 0
     end
 

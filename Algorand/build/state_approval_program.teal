@@ -596,9 +596,6 @@ trade:
     // Amount: clear_gas_amount
     load 8 // clear_gas_amount
     itxn_field Amount
-    // Note: Txn.Note
-    txn Note
-    itxn_field Note
     // Fee: 0
     pushint 0
     itxn_field Fee

@@ -212,6 +212,15 @@ block create_bid:
     assert(box_existed == 1)
     box_replace(bid_id, 0, bid)
 
+    # notify B
+    inner_txn:
+        TypeEnum: Pay
+        Receiver: b
+        Amount: 0
+        Fee: 0
+        Note: "you have mail ~ check your FairInbox.io"
+    end
+
     exit(1)
 end
 

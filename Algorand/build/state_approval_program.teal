@@ -408,6 +408,27 @@ create_bid:
   load 7 // bid
   box_replace
   
+  // notify B
+  // inner_txn:
+  itxn_begin
+    // TypeEnum: Pay
+    pushint 1 // Pay
+    itxn_field TypeEnum
+    // Receiver: b
+    load 9 // b
+    itxn_field Receiver
+    // Amount: 0
+    pushint 0
+    itxn_field Amount
+    // Fee: 0
+    pushint 0
+    itxn_field Fee
+    // Note: "you have mail ~ check your FairInbox.io"
+    pushbytes "you have mail ~ check your FairInbox.io"
+    itxn_field Note
+  itxn_submit
+  // end inner_txn
+  
   // exit(1)
   pushint 1
   return

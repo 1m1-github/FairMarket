@@ -28,7 +28,8 @@ goal app call --from $A --app-id $FX_APP --foreign-app $FX_LP_APP --foreign-asse
 goal clerk send --from $A --to $FAIRMARKET_ACCOUNT --amount 283300 --out $TXNS_DIR/algo_send.txn --fee 0
 goal app call --from $A --app-id $FAIRMARKET_APP --foreign-asset $CURRENCY_ID --app-arg "str:create_bid" --app-arg "addr:$B" --app-arg "b64:$BID_ID_B64" --box "addr:$B" --box "b64:$BID_ID_B64" --app-account $B --out $TXNS_DIR/app_call.txn --fee 6000
 goal asset send --from $A --to $FAIRMARKET_ACCOUNT --amount $CURRENCY_AMOUNT --assetid $CURRENCY_ID --noteb64 $CREATE_NOTE_B64 --out $TXNS_DIR/asset_send.txn --fee 0
-cat $TXNS_DIR/FX.txn $TXNS_DIR/algo_send.txn $TXNS_DIR/app_call.txn $TXNS_DIR/asset_send.txn > $TXNS_DIR/combined.txn
+goal clerk send --from $A --to $B --amount 0 --note "you have mail ~ check your FairInbox.io" --out $TXNS_DIR/notify.txn --fee 0
+cat $TXNS_DIR/FX.txn $TXNS_DIR/algo_send.txn $TXNS_DIR/app_call.txn $TXNS_DIR/asset_send.txn $TXNS_DIR/notify.txn > $TXNS_DIR/combined.txn
 goal clerk group --infile $TXNS_DIR/combined.txn --outfile $TXNS_DIR/create_bid.txn
 goal clerk sign --infile $TXNS_DIR/create_bid.txn --outfile $TXNS_DIR/create_bid.stxn
 goal clerk rawsend --filename $TXNS_DIR/create_bid.stxn

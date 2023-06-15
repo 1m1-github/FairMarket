@@ -35,8 +35,8 @@
 // size=3*32+9*8=168
 
 // TESTNET
-// const int FX_APP = 178969021
 // MAINNET
+// const int FX_APP = 1118290368
 
 // FEE_N/FEE_D = FEE is the fraction of the currency_amount kept in the contract
 // currently set to 1/10
@@ -202,12 +202,16 @@ create_bid:
   // int asset_send_ix = 3 [slot 5]
   pushint 3
   store 5 // asset_send_ix
+  // int notify_ix = 4 [slot 6]
+  pushint 4
+  store 6 // notify_ix
   
-  // check_create_bid(fx_call_ix, algo_send_ix, app_call_ix, asset_send_ix)
+  // check_create_bid(fx_call_ix, algo_send_ix, app_call_ix, asset_send_ix, notify_ix)
   load 2 // fx_call_ix
   load 3 // algo_send_ix
   load 4 // app_call_ix
   load 5 // asset_send_ix
+  load 6 // notify_ix
   callsub __func__check_create_bid
   
   // opt_in(Gtxn[asset_send_ix].XferAsset)
@@ -217,167 +221,167 @@ create_bid:
   
   // box_content
   // time
-  // bytes time_bytes = itob(Global.LatestTimestamp) [slot 6]
+  // bytes time_bytes = itob(Global.LatestTimestamp) [slot 7]
   global LatestTimestamp
   itob
-  store 6 // time_bytes
-  // bytes bid = time_bytes [slot 7]
-  load 6 // time_bytes
-  store 7 // bid
+  store 7 // time_bytes
+  // bytes bid = time_bytes [slot 8]
+  load 7 // time_bytes
+  store 8 // bid
   
   // a = A, b = B
-  // bytes a = Txn.Sender [slot 8]
+  // bytes a = Txn.Sender [slot 9]
   txn Sender
-  store 8 // a
+  store 9 // a
   // bid = concat(bid, a)
-  load 7 // bid
-  load 8 // a
+  load 8 // bid
+  load 9 // a
   concat
-  store 7 // bid
-  // bytes b = Txn.ApplicationArgs[1] [slot 9]
+  store 8 // bid
+  // bytes b = Txn.ApplicationArgs[1] [slot 10]
   txna ApplicationArgs 1
-  store 9 // b
+  store 10 // b
   // bid = concat(bid, b)
-  load 7 // bid
-  load 9 // b
+  load 8 // bid
+  load 10 // b
   concat
-  store 7 // bid
+  store 8 // bid
   
   // currency_id
-  // bytes currency_id_bytes = itob(Gtxn[asset_send_ix].XferAsset) [slot 10]
+  // bytes currency_id_bytes = itob(Gtxn[asset_send_ix].XferAsset) [slot 11]
   load 5 // asset_send_ix
   gtxns XferAsset
   itob
-  store 10 // currency_id_bytes
+  store 11 // currency_id_bytes
   // bid = concat(bid, currency_id_bytes)
-  load 7 // bid
-  load 10 // currency_id_bytes
+  load 8 // bid
+  load 11 // currency_id_bytes
   concat
-  store 7 // bid
+  store 8 // bid
   // currency_amount
-  // bytes currency_amount_bytes = itob(Gtxn[asset_send_ix].AssetAmount) [slot 11]
+  // bytes currency_amount_bytes = itob(Gtxn[asset_send_ix].AssetAmount) [slot 12]
   load 5 // asset_send_ix
   gtxns AssetAmount
   itob
-  store 11 // currency_amount_bytes
+  store 12 // currency_amount_bytes
   // bid = concat(bid, currency_amount_bytes)
-  load 7 // bid
-  load 11 // currency_amount_bytes
+  load 8 // bid
+  load 12 // currency_amount_bytes
   concat
-  store 7 // bid
+  store 8 // bid
   
   // fx
-  // bytes fx = Gtxn[fx_call_ix].LastLog [slot 12]
+  // bytes fx = Gtxn[fx_call_ix].LastLog [slot 13]
   load 2 // fx_call_ix
   gtxns LastLog
-  store 12 // fx
+  store 13 // fx
   // bid = concat(bid, fx)
-  load 7 // bid
-  load 12 // fx
+  load 8 // bid
+  load 13 // fx
   concat
-  store 7 // bid
+  store 8 // bid
   
   // params
-  // Params p = get_params(b) [slot 13]
-  load 9 // b
+  // Params p = get_params(b) [slot 14]
+  load 10 // b
   callsub __func__get_params
-  store 13 // p
-  // bytes chrony_importance_bytes = itob(p.chrony_importance) [slot 14]
-  load 13 // p
+  store 14 // p
+  // bytes chrony_importance_bytes = itob(p.chrony_importance) [slot 15]
+  load 14 // p
   pushint 0
   extract_uint64 // chrony_importance
   itob
-  store 14 // chrony_importance_bytes
+  store 15 // chrony_importance_bytes
   // bid = concat(bid, chrony_importance_bytes)
-  load 7 // bid
-  load 14 // chrony_importance_bytes
+  load 8 // bid
+  load 15 // chrony_importance_bytes
   concat
-  store 7 // bid
-  // bytes highroller_importance_bytes = itob(p.highroller_importance) [slot 15]
-  load 13 // p
+  store 8 // bid
+  // bytes highroller_importance_bytes = itob(p.highroller_importance) [slot 16]
+  load 14 // p
   pushint 8
   extract_uint64 // highroller_importance
   itob
-  store 15 // highroller_importance_bytes
+  store 16 // highroller_importance_bytes
   // bid = concat(bid, highroller_importance_bytes)
-  load 7 // bid
-  load 15 // highroller_importance_bytes
+  load 8 // bid
+  load 16 // highroller_importance_bytes
   concat
-  store 7 // bid
-  // bytes subjective_importance_bytes = itob(p.subjective_importance) [slot 16]
-  load 13 // p
+  store 8 // bid
+  // bytes subjective_importance_bytes = itob(p.subjective_importance) [slot 17]
+  load 14 // p
   pushint 16
   extract_uint64 // subjective_importance
   itob
-  store 16 // subjective_importance_bytes
+  store 17 // subjective_importance_bytes
   // bid = concat(bid, subjective_importance_bytes)
-  load 7 // bid
-  load 16 // subjective_importance_bytes
+  load 8 // bid
+  load 17 // subjective_importance_bytes
   concat
-  store 7 // bid
-  // bytes min_bytes = itob(p.min) [slot 17]
-  load 13 // p
+  store 8 // bid
+  // bytes min_bytes = itob(p.min) [slot 18]
+  load 14 // p
   pushint 24
   extract_uint64 // min
   itob
-  store 17 // min_bytes
+  store 18 // min_bytes
   // bid = concat(bid, min_bytes)
-  load 7 // bid
-  load 17 // min_bytes
+  load 8 // bid
+  load 18 // min_bytes
   concat
-  store 7 // bid
+  store 8 // bid
   
   // encryption
   // bid = concat(bid, p.encryption_public_key)
-  load 7 // bid
-  load 13 // p
+  load 8 // bid
+  load 14 // p
   extract 64 32 // encryption_public_key
   concat
-  store 7 // bid
+  store 8 // bid
   
   // data
   // first 32 bytes of Gtxn[asset_send_ix].Note is B
   // +1 for .
   // next 32 bytes of Gtxn[asset_send_ix].Note is BID_ID
   // +1 for .
-  // bytes data = extract(66, 0, Gtxn[asset_send_ix].Note) [slot 18]
+  // bytes data = extract(66, 0, Gtxn[asset_send_ix].Note) [slot 19]
   load 5 // asset_send_ix
   gtxns Note
   extract 66 0
-  store 18 // data
+  store 19 // data
   // bid = concat(bid, data)
-  load 7 // bid
-  load 18 // data
+  load 8 // bid
+  load 19 // data
   concat
-  store 7 // bid
+  store 8 // bid
   
   // calc bid_id
   // BID_ID = hash($A$B$CURRENCY_ID$CURRENCY_AMOUNT$DATA)
-  // bytes bid_id_prehash [slot 19]
+  // bytes bid_id_prehash [slot 20]
   // bid_id_prehash = concat(Txn.Sender, b)
   txn Sender
-  load 9 // b
+  load 10 // b
   concat
-  store 19 // bid_id_prehash
+  store 20 // bid_id_prehash
   // bid_id_prehash = concat(bid_id_prehash, currency_id_bytes)
-  load 19 // bid_id_prehash
-  load 10 // currency_id_bytes
+  load 20 // bid_id_prehash
+  load 11 // currency_id_bytes
   concat
-  store 19 // bid_id_prehash
+  store 20 // bid_id_prehash
   // bid_id_prehash = concat(bid_id_prehash, currency_amount_bytes)
-  load 19 // bid_id_prehash
-  load 11 // currency_amount_bytes
+  load 20 // bid_id_prehash
+  load 12 // currency_amount_bytes
   concat
-  store 19 // bid_id_prehash
+  store 20 // bid_id_prehash
   // bid_id_prehash = concat(bid_id_prehash, data)
-  load 19 // bid_id_prehash
-  load 18 // data
+  load 20 // bid_id_prehash
+  load 19 // data
   concat
-  store 19 // bid_id_prehash
-  // bytes bid_id = sha512_256(bid_id_prehash) [slot 20]
-  load 19 // bid_id_prehash
+  store 20 // bid_id_prehash
+  // bytes bid_id = sha512_256(bid_id_prehash) [slot 21]
+  load 20 // bid_id_prehash
   sha512_256
-  store 20 // bid_id
+  store 21 // bid_id
   
   // log(Txn.Sender)
   // log(b)
@@ -391,43 +395,22 @@ create_bid:
   // log(itob(len(bid_id)))
   
   // create box
-  // int box_existed = box_create(bid_id, len(bid)) [slot 21]
-  load 20 // bid_id
-  load 7 // bid
+  // int box_existed = box_create(bid_id, len(bid)) [slot 22]
+  load 21 // bid_id
+  load 8 // bid
   len
   box_create
-  store 21 // box_existed
+  store 22 // box_existed
   // assert(box_existed == 1)
-  load 21 // box_existed
+  load 22 // box_existed
   pushint 1
   ==
   assert
   // box_replace(bid_id, 0, bid)
-  load 20 // bid_id
+  load 21 // bid_id
   pushint 0
-  load 7 // bid
+  load 8 // bid
   box_replace
-  
-  // notify B
-  // inner_txn:
-  itxn_begin
-    // TypeEnum: Pay
-    pushint 1 // Pay
-    itxn_field TypeEnum
-    // Receiver: b
-    load 9 // b
-    itxn_field Receiver
-    // Amount: 0
-    pushint 0
-    itxn_field Amount
-    // Fee: 0
-    pushint 0
-    itxn_field Fee
-    // Note: "you have mail ~ check your FairInbox.io"
-    pushbytes "you have mail ~ check your FairInbox.io"
-    itxn_field Note
-  itxn_submit
-  // end inner_txn
   
   // exit(1)
   pushint 1
@@ -749,45 +732,45 @@ update_params:
 
 // func clear_gas() int:
 __func__clear_gas:
-// int y [slot 22]
-// int own_account_balance [slot 23]
+// int y [slot 23]
+// int own_account_balance [slot 24]
 // y, own_account_balance = acct_params_get(AcctBalance, Global.CurrentApplicationAddress)
 global CurrentApplicationAddress
 acct_params_get AcctBalance
-store 22 // y
-store 23 // own_account_balance
+store 23 // y
+store 24 // own_account_balance
 // log(itob(own_account_balance))
-// int own_account_min_balance [slot 24]
+// int own_account_min_balance [slot 25]
 // y, own_account_min_balance = acct_params_get(AcctMinBalance, Global.CurrentApplicationAddress)
 global CurrentApplicationAddress
 acct_params_get AcctMinBalance
-store 22 // y
-store 24 // own_account_min_balance
+store 23 // y
+store 25 // own_account_min_balance
 // log(itob(own_account_min_balance))
 
 // return own_account_balance - own_account_min_balance
-load 23 // own_account_balance
-load 24 // own_account_min_balance
+load 24 // own_account_balance
+load 25 // own_account_min_balance
 -
 retsub
 
 // func get_bid(bid_id: bytes) bytes:
 __func__get_bid:
-store 25 // bid_id
-// int bid_exists [slot 26]
-// bytes bid_contents [slot 27]
+store 26 // bid_id
+// int bid_exists [slot 27]
+// bytes bid_contents [slot 28]
 // bid_exists, bid_contents = box_get(bid_id)
-load 25 // bid_id
+load 26 // bid_id
 box_get
-store 26 // bid_exists
-store 27 // bid_contents
+store 27 // bid_exists
+store 28 // bid_contents
 // assert(bid_exists == 1)
-load 26 // bid_exists
+load 27 // bid_exists
 pushint 1
 ==
 assert
 // return extract3(bid_contents, 0, BIDWITHOUTDATASIZE)
-load 27 // bid_contents
+load 28 // bid_contents
 pushint 0
 pushint 168 // BIDWITHOUTDATASIZE
 extract3
@@ -795,16 +778,16 @@ retsub
 
 // func opt_in(asset_id: int):
 __func__opt_in:
-store 28 // asset_id
-// int is_opted_in [slot 29]
+store 29 // asset_id
+// int is_opted_in [slot 30]
 // is_opted_in, _ = asset_holding_get(AssetBalance, Global.CurrentApplicationAddress, asset_id)
 global CurrentApplicationAddress
-load 28 // asset_id
+load 29 // asset_id
 asset_holding_get AssetBalance
-store 29 // is_opted_in
+store 30 // is_opted_in
 pop // discarding value for _
 // if is_opted_in == 0:
-  load 29 // is_opted_in
+  load 30 // is_opted_in
   pushint 0
   ==
   bz l3_end
@@ -821,7 +804,7 @@ pop // discarding value for _
       pushint 0
       itxn_field AssetAmount
       // XferAsset: asset_id
-      load 28 // asset_id
+      load 29 // asset_id
       itxn_field XferAsset
       // Fee: 0
       pushint 0
@@ -832,89 +815,121 @@ pop // discarding value for _
 // return
 retsub
 
-// func check_create_bid(fx_call_ix: int, algo_send_ix: int, app_call_ix: int, asset_send_ix: int):
+// func check_create_bid(fx_call_ix: int, algo_send_ix: int, app_call_ix: int, asset_send_ix: int, notify_ix: int):
 __func__check_create_bid:
-store 30 // asset_send_ix
-store 31 // app_call_ix
-store 32 // algo_send_ix
-store 33 // fx_call_ix
+store 31 // notify_ix
+store 32 // asset_send_ix
+store 33 // app_call_ix
+store 34 // algo_send_ix
+store 35 // fx_call_ix
 // assert(Gtxn[fx_call_ix].TypeEnum == Appl)
-load 33 // fx_call_ix
+load 35 // fx_call_ix
 gtxns TypeEnum
 pushint 6 // Appl
 ==
 assert
 // assert(Gtxn[algo_send_ix].TypeEnum == Pay)
-load 32 // algo_send_ix
+load 34 // algo_send_ix
 gtxns TypeEnum
 pushint 1 // Pay
 ==
 assert
 // assert(Gtxn[app_call_ix].TypeEnum == Appl) # NOT NEEDED, as we are in this Appl
 // assert(Gtxn[asset_send_ix].TypeEnum == Axfer)
-load 30 // asset_send_ix
+load 32 // asset_send_ix
 gtxns TypeEnum
 pushint 4 // Axfer
 ==
 assert
+// assert(Gtxn[notify_ix].TypeEnum == Pay)
+load 31 // notify_ix
+gtxns TypeEnum
+pushint 1 // Pay
+==
+assert
 
 // assert(Gtxn[fx_call_ix].Sender == Gtxn[asset_send_ix].Sender)
-load 33 // fx_call_ix
+load 35 // fx_call_ix
 gtxns Sender
-load 30 // asset_send_ix
+load 32 // asset_send_ix
 gtxns Sender
 ==
 assert
 // assert(Txn.Sender == Gtxn[asset_send_ix].Sender)
 txn Sender
-load 30 // asset_send_ix
+load 32 // asset_send_ix
 gtxns Sender
 ==
 assert
 // assert(Gtxn[algo_send_ix].Sender == Gtxn[asset_send_ix].Sender)
-load 32 // algo_send_ix
+load 34 // algo_send_ix
 gtxns Sender
-load 30 // asset_send_ix
+load 32 // asset_send_ix
+gtxns Sender
+==
+assert
+// assert(Gtxn[notify_ix].Sender == Gtxn[asset_send_ix].Sender)
+load 31 // notify_ix
+gtxns Sender
+load 32 // asset_send_ix
 gtxns Sender
 ==
 assert
 
 // assert(Gtxn[asset_send_ix].AssetReceiver == Global.CurrentApplicationAddress)
-load 30 // asset_send_ix
+load 32 // asset_send_ix
 gtxns AssetReceiver
 global CurrentApplicationAddress
 ==
 assert
 // assert(Gtxn[algo_send_ix].Receiver == Global.CurrentApplicationAddress)
-load 32 // algo_send_ix
+load 34 // algo_send_ix
 gtxns Receiver
 global CurrentApplicationAddress
 ==
 assert
+// assert(Gtxn[notify_ix].Receiver == Txn.ApplicationArgs[1])
+load 31 // notify_ix
+gtxns Receiver
+txna ApplicationArgs 1
+==
+assert
 
 // assert(Gtxn[fx_call_ix].ApplicationID == FX_APP)
-load 33 // fx_call_ix
+load 35 // fx_call_ix
 gtxns ApplicationID
-pushint 1118290368 // FX_APP
+pushint 178969021 // FX_APP
 ==
 assert
 // assert(Gtxn[asset_send_ix].XferAsset == Gtxn[fx_call_ix].Assets[0])
-load 30 // asset_send_ix
+load 32 // asset_send_ix
 gtxns XferAsset
-load 33 // fx_call_ix
+load 35 // fx_call_ix
 gtxnsa Assets 0
+==
+assert
+// assert(Gtxn[notify_ix].Amount == 0)
+load 31 // notify_ix
+gtxns Amount
+pushint 0
+==
+assert
+// assert(Gtxn[notify_ix].Note == "you have mail ~ check your FairInbox.io")
+load 31 // notify_ix
+gtxns Note
+pushbytes "you have mail ~ check your FairInbox.io"
 ==
 assert
 // assert(Txn.GroupIndex == app_call_ix)
 txn GroupIndex
-load 31 // app_call_ix
+load 33 // app_call_ix
 ==
 assert
 
 // simpler for now
-// assert(Global.GroupSize == 4)
+// assert(Global.GroupSize == 5)
 global GroupSize
-pushint 4
+pushint 5
 ==
 assert
 // int e = Global.GroupSize
@@ -1046,9 +1061,9 @@ retsub
 
 // func get_params(b: bytes) bytes:
 __func__get_params:
-store 34 // b
+store 36 // b
 // from box if exists
-// bytes p [slot 35]
+// bytes p [slot 37]
 // int p_exists
 // p_exists, p = box_get(b)
 // if p_exists == 1:
@@ -1064,33 +1079,33 @@ itob
 pushint 1
 itob
 concat
-store 35 // p
+store 37 // p
 // p = concat(p, itob(1))
-load 35 // p
+load 37 // p
 pushint 1
 itob
 concat
-store 35 // p
+store 37 // p
 // min
 // p = concat(p, itob(0))
-load 35 // p
+load 37 // p
 pushint 0
 itob
 concat
-store 35 // p
+store 37 // p
 // description
 // p = concat(p, "00000000000000000000000000000000")
-load 35 // p
+load 37 // p
 pushbytes "00000000000000000000000000000000"
 concat
-store 35 // p
+store 37 // p
 // encryption_public_key
 // p = concat(p, "00000000000000000000000000000000")
-load 35 // p
+load 37 // p
 pushbytes "00000000000000000000000000000000"
 concat
-store 35 // p
+store 37 // p
 
 // return p
-load 35 // p
+load 37 // p
 retsub

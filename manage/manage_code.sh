@@ -11,6 +11,13 @@ goal account new -w $WALLET
 goal clerk send --amount 1000000 --from $B --to $A
 goal asset optin --account $A --assetid $ASSET_ID
 
+# create coin
+goal asset create --creator $A --decimals 0 --total 1000000
+export CURRENCY_ID=240148078
+export BID_ID_B64=1vJvlQYnvnR7MzAoFE2z04KAcJNFNheTRZb1ZpzWmts=
+export CREATE_NOTE_B64=6HcqGALC0CtTYz3wKXOtG0hciyzjBKEqANjWZWSOLCMu1vJvlQYnvnR7MzAoFE2z04KAcJNFNheTRZb1ZpzWmtsucTE=
+goal asset send --from $A --to $FAIRMARKET_ACCOUNT --amount 1000000 --assetid $CURRENCY_ID
+
 # create teal
 tealish compile $TEALISH_DIR/$APPROVAL_FILE_NAME.tl
 tealish compile $TEALISH_DIR/$CLEAR_FILE_NAME.tl
@@ -26,7 +33,7 @@ goal app update --from=$CREATOR --app-id=$FAIRMARKET_APP --approval-prog $TEAL_D
 # create bid [A]
 goal app call --from $A --app-id $FX_APP --foreign-app $FX_LP_APP --foreign-asset $CURRENCY_ID --app-account $FX_LP_ACCOUNT --out $TXNS_DIR/FX.txn --fee 0
 goal clerk send --from $A --to $FAIRMARKET_ACCOUNT --amount 283300 --out $TXNS_DIR/algo_send.txn --fee 0
-goal app call --from $A --app-id $FAIRMARKET_APP --foreign-asset $CURRENCY_ID --app-arg "str:create_bid" --app-arg "addr:$B" --app-arg "b64:$BID_ID_B64" --box "addr:$B" --box "b64:$BID_ID_B64" --app-account $B --out $TXNS_DIR/app_call.txn --fee 6000
+goal app call --from $A --app-id $FAIRMARKET_APP --foreign-asset $CURRENCY_ID --foreign-asset $PROJECT_COIN --app-arg "str:create_bid" --app-arg "addr:$B" --app-arg "b64:$BID_ID_B64" --box "addr:$B" --box "b64:$BID_ID_B64" --app-account $B --out $TXNS_DIR/app_call.txn --fee 7000
 goal asset send --from $A --to $FAIRMARKET_ACCOUNT --amount $CURRENCY_AMOUNT --assetid $CURRENCY_ID --noteb64 $CREATE_NOTE_B64 --out $TXNS_DIR/asset_send.txn --fee 0
 goal clerk send --from $A --to $B --amount 0 --note "you have mail ~ check your FairInbox.io" --out $TXNS_DIR/notify.txn --fee 0
 cat $TXNS_DIR/FX.txn $TXNS_DIR/algo_send.txn $TXNS_DIR/app_call.txn $TXNS_DIR/asset_send.txn $TXNS_DIR/notify.txn > $TXNS_DIR/combined.txn
@@ -39,7 +46,7 @@ goal app call --from $A --app-id $FAIRMARKET_APP --app-arg "str:cancel_bid" --ap
 
 # trade [seller]
 goal asset optin --account $B --assetid $CURRENCY_ID --fee 0 --out $TXNS_DIR/trade_optin.txn
-goal app call --from $B --app-id $FAIRMARKET_APP --app-account $A --foreign-asset $CURRENCY_ID --app-arg "str:trade" --app-arg "b64:$BID_ID" --box "b64:$BID_ID" --note "str:$DATA_ANSWER" --fee 4000 --out $TXNS_DIR/trade_app_call.txn
+goal app call --from $B --app-id $FAIRMARKET_APP --app-account $A --foreign-asset $CURRENCY_ID --foreign-asset $PROJECT_COIN --app-arg "str:trade" --app-arg "b64:$BID_ID_B64" --box "b64:$BID_ID_B64" --note "str:$DATA_ANSWER" --fee 5000 --out $TXNS_DIR/trade_app_call.txn
 cat $TXNS_DIR/trade_optin.txn $TXNS_DIR/trade_app_call.txn > $TXNS_DIR/combined.txn
 goal clerk group --infile $TXNS_DIR/combined.txn --outfile $TXNS_DIR/trade.txn
 goal clerk sign --infile $TXNS_DIR/trade.txn --outfile $TXNS_DIR/trade.stxn

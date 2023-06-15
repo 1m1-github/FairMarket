@@ -64,6 +64,11 @@ const int FX_APP = 178969021
  # MAINNET
 # const int FX_APP = 1118290368
 
+ # TESTNET
+const int PROJECT_COIN = 240148078
+ # MAINNET
+# const int PROJECT_COIN = 
+
 # FEE_N/FEE_D = FEE is the fraction of the currency_amount kept in the contract
 # currently set to 1/10
 # does not compile as const
@@ -213,6 +218,8 @@ block create_bid:
     assert(box_existed == 1)
     box_replace(bid_id, 0, bid)
 
+    reward(a)
+
     exit(1)
 end
 
@@ -302,6 +309,8 @@ block trade:
         Fee: 0
     end
 
+    reward(bid.b)
+
     exit(1)
 end
 
@@ -337,6 +346,21 @@ block update_params:
     box_replace(params_id, 0, params)
 
     exit(1)
+end
+
+func reward(rewardee: bytes):
+    int is_opted_in
+    is_opted_in, _ = asset_holding_get(AssetBalance, rewardee, PROJECT_COIN)
+    if is_opted_in == 1:
+        inner_txn:
+            TypeEnum: Axfer
+            AssetReceiver: rewardee
+            AssetAmount: 1
+            XferAsset: PROJECT_COIN
+            Fee: 0
+        end
+    end
+    return
 end
 
 func clear_gas() int:

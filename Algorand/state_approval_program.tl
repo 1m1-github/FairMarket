@@ -64,6 +64,11 @@ const int BIDWITHOUTDATASIZE = 168
  # MAINNET
 const int FX_APP = 1118290368
 
+ # TESTNET
+# const int PROJECT_COIN = 240148078
+ # MAINNET
+const int PROJECT_COIN = 662477403
+
 # FEE_N/FEE_D = FEE is the fraction of the currency_amount kept in the contract
 # currently set to 1/10
 # does not compile as const
@@ -138,8 +143,9 @@ block create_bid:
     int algo_send_ix = 1
     int app_call_ix = 2
     int asset_send_ix = 3
+    int notify_ix = 4
 
-    check_create_bid(fx_call_ix, algo_send_ix, app_call_ix, asset_send_ix)
+    check_create_bid(fx_call_ix, algo_send_ix, app_call_ix, asset_send_ix, notify_ix)
     
     opt_in(Gtxn[asset_send_ix].XferAsset)
 
@@ -212,14 +218,7 @@ block create_bid:
     assert(box_existed == 1)
     box_replace(bid_id, 0, bid)
 
-    # notify B
-    inner_txn:
-        TypeEnum: Pay
-        Receiver: b
-        Amount: 0
-        Fee: 0
-        Note: "you have mail ~ check your FairInbox.io"
-    end
+    reward(a)
 
     exit(1)
 end
@@ -310,6 +309,8 @@ block trade:
         Fee: 0
     end
 
+    reward(bid.b)
+
     exit(1)
 end
 
@@ -347,6 +348,21 @@ block update_params:
     exit(1)
 end
 
+func reward(rewardee: bytes):
+    int is_opted_in
+    is_opted_in, _ = asset_holding_get(AssetBalance, rewardee, PROJECT_COIN)
+    if is_opted_in == 1:
+        inner_txn:
+            TypeEnum: Axfer
+            AssetReceiver: rewardee
+            AssetAmount: 1
+            XferAsset: PROJECT_COIN
+            Fee: 0
+        end
+    end
+    return
+end
+
 func clear_gas() int:
     int y
     int own_account_balance
@@ -382,25 +398,30 @@ func opt_in(asset_id: int):
     return
 end
 
-func check_create_bid(fx_call_ix: int, algo_send_ix: int, app_call_ix: int, asset_send_ix: int):
+func check_create_bid(fx_call_ix: int, algo_send_ix: int, app_call_ix: int, asset_send_ix: int, notify_ix: int):
     assert(Gtxn[fx_call_ix].TypeEnum == Appl)
     assert(Gtxn[algo_send_ix].TypeEnum == Pay)
     # assert(Gtxn[app_call_ix].TypeEnum == Appl) # NOT NEEDED, as we are in this Appl
     assert(Gtxn[asset_send_ix].TypeEnum == Axfer)
+    assert(Gtxn[notify_ix].TypeEnum == Pay)
 
     assert(Gtxn[fx_call_ix].Sender == Gtxn[asset_send_ix].Sender)
     assert(Txn.Sender == Gtxn[asset_send_ix].Sender)
     assert(Gtxn[algo_send_ix].Sender == Gtxn[asset_send_ix].Sender)
+    assert(Gtxn[notify_ix].Sender == Gtxn[asset_send_ix].Sender)
 
     assert(Gtxn[asset_send_ix].AssetReceiver == Global.CurrentApplicationAddress)
     assert(Gtxn[algo_send_ix].Receiver == Global.CurrentApplicationAddress)
+    assert(Gtxn[notify_ix].Receiver == Txn.ApplicationArgs[1])
     
     assert(Gtxn[fx_call_ix].ApplicationID == FX_APP)
     assert(Gtxn[asset_send_ix].XferAsset == Gtxn[fx_call_ix].Assets[0])
+    assert(Gtxn[notify_ix].Amount == 0)
+    assert(Gtxn[notify_ix].Note == "you have mail ~ check your FairInbox.io")
     assert(Txn.GroupIndex == app_call_ix)
 
     # simpler for now
-    assert(Global.GroupSize == 4)
+    assert(Global.GroupSize == 5)
     # int e = Global.GroupSize
     # for i in 4:e:
     #     assert(Gtxn[i].TypeEnum == Appl)

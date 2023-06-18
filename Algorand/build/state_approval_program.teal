@@ -35,12 +35,12 @@
 // size=3*32+9*8=168
 
 // TESTNET
+// const int FX_APP = 178969021
 // MAINNET
-// const int FX_APP = 1118290368
 
 // TESTNET
+// const int PROJECT_COIN = 240148078
 // MAINNET
-// const int PROJECT_COIN =
 
 // FEE_N/FEE_D = FEE is the fraction of the currency_amount kept in the contract
 // currently set to 1/10
@@ -749,7 +749,7 @@ store 23 // rewardee
 // int is_opted_in [slot 24]
 // is_opted_in, _ = asset_holding_get(AssetBalance, rewardee, PROJECT_COIN)
 load 23 // rewardee
-pushint 240148078 // PROJECT_COIN
+pushint 662477403 // PROJECT_COIN
 asset_holding_get AssetBalance
 store 24 // is_opted_in
 pop // discarding value for _
@@ -771,7 +771,7 @@ pop // discarding value for _
       pushint 1
       itxn_field AssetAmount
       // XferAsset: PROJECT_COIN
-      pushint 240148078 // PROJECT_COIN
+      pushint 662477403 // PROJECT_COIN
       itxn_field XferAsset
       // Fee: 0
       pushint 0
@@ -950,7 +950,7 @@ assert
 // assert(Gtxn[fx_call_ix].ApplicationID == FX_APP)
 load 37 // fx_call_ix
 gtxns ApplicationID
-pushint 178969021 // FX_APP
+pushint 1118290368 // FX_APP
 ==
 assert
 // assert(Gtxn[asset_send_ix].XferAsset == Gtxn[fx_call_ix].Assets[0])

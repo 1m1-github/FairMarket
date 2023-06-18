@@ -11,13 +11,6 @@ goal account new -w $WALLET
 goal clerk send --amount 1000000 --from $B --to $A
 goal asset optin --account $A --assetid $ASSET_ID
 
-# create coin
-goal asset create --creator $A --decimals 0 --total 1000000
-export CURRENCY_ID=240148078
-export BID_ID_B64=1vJvlQYnvnR7MzAoFE2z04KAcJNFNheTRZb1ZpzWmts=
-export CREATE_NOTE_B64=6HcqGALC0CtTYz3wKXOtG0hciyzjBKEqANjWZWSOLCMu1vJvlQYnvnR7MzAoFE2z04KAcJNFNheTRZb1ZpzWmtsucTE=
-goal asset send --from $A --to $FAIRMARKET_ACCOUNT --amount 1000000 --assetid $CURRENCY_ID
-
 # create teal
 tealish compile $TEALISH_DIR/$APPROVAL_FILE_NAME.tl
 tealish compile $TEALISH_DIR/$CLEAR_FILE_NAME.tl

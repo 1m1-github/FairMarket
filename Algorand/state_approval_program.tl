@@ -67,7 +67,7 @@ const int FX_APP = 178969021
  # TESTNET
 const int PROJECT_COIN = 240148078
  # MAINNET
-# const int PROJECT_COIN = 
+# const int PROJECT_COIN = 662477403
 
 # FEE_N/FEE_D = FEE is the fraction of the currency_amount kept in the contract
 # currently set to 1/10

@@ -749,7 +749,7 @@ store 23 // rewardee
 // int is_opted_in [slot 24]
 // is_opted_in, _ = asset_holding_get(AssetBalance, rewardee, PROJECT_COIN)
 load 23 // rewardee
-pushint 662477403 // PROJECT_COIN
+pushint 1130719852 // PROJECT_COIN
 asset_holding_get AssetBalance
 store 24 // is_opted_in
 pop // discarding value for _
@@ -771,7 +771,7 @@ pop // discarding value for _
       pushint 1
       itxn_field AssetAmount
       // XferAsset: PROJECT_COIN
-      pushint 662477403 // PROJECT_COIN
+      pushint 1130719852 // PROJECT_COIN
       itxn_field XferAsset
       // Fee: 0
       pushint 0
